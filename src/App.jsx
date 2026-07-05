@@ -739,6 +739,7 @@ function ContactView() {
       </div> 
     </section>
   );
+  }
 export default function App() {
   const [view, setView] = useState("home");
   const [activeCat, setActiveCat] = useState("all");
