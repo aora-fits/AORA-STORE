@@ -19,9 +19,6 @@ const COLORS = {
 
 const CATEGORIES = [
   { id: "robes", label: "فساتين" },
-  { id: "vestes", label: "جاكيتات" },
-  { id: "accessoires", label: "إكسسوارات" },
-  { id: "parfums", label: "عطور" },
 ];
 
 const DEFAULT_PRODUCTS = [
