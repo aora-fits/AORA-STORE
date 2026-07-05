@@ -298,8 +298,6 @@ function HomeView({ products, setView, setActiveCat, setSelectedId, addToCart })
   return (
     <>
       <Hero setView={setView} />
-      <CategoryRail setView={setView} setActiveCat={setActiveCat} />
-      <FeaturedGrid products={products} setView={setView} setSelectedId={setSelectedId} addToCart={addToCart} />
       <Banner />
     </>
   );
