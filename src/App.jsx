@@ -321,9 +321,9 @@ function Footer({ setView }) {
           </p>
         </div>
         {[
-          { title: "المتجر", items: ["فساتين", "جاكيتات", "إكسسوارات", "عطور"] },
-          { title: "خدمة العملاء", items: ["الشحن والتوصيل", "الإرجاع والاستبدال", "الأسئلة الشائعة", "تواصلي معنا"] },
-          { title: "تابعينا", items: ["Instagram", "Facebook", "TikTok"] },
+          { title: "Shop", items:[ "Dresses"] },
+          { title: " Costumer Care", items: ["Shipping & Delivery", "Returns & Exchanges", "FAQ", "Contact Us"] },
+          { title: "Follow Us", items: ["Instagram", "Facebook", "TikTok"] },
         ].map((col) => (
           <div key={col.title}>
             <p className="text-sm mb-4" style={{ color: COLORS.bronze, fontFamily: "Jost, sans-serif" }}>
@@ -340,7 +340,7 @@ function Footer({ setView }) {
         ))}
       </div>
       <div className="max-w-6xl mx-auto pt-6 border-t flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-center" style={{ borderColor: "#3a352f", color: COLORS.mute, fontFamily: "Jost, sans-serif" }}>
-        <span>© 2026 AORA ر. جميع الحقوق محفوظة.</span>
+        <span>© 2026 AORA  .All rights reserved.made by <eabdou className="bch"></eabdou></span>
         <button onClick={() => setView("admin")} className="underline opacity-70 hover:opacity-100">
           لوحة تحكم المتجر
         </button>
@@ -365,10 +365,10 @@ function ShopView({ products, activeCat, setActiveCat, setView, setSelectedId, a
   return (
     <section className="max-w-6xl mx-auto px-5 md:px-8 py-14">
       <h1 className="text-3xl md:text-4xl mb-8" style={{ fontFamily: "Fraunces, serif", color: COLORS.ink }}>
-        المتجر
+        shop
       </h1>
       <div className="flex gap-3 overflow-x-auto pb-6 mb-6 border-b" style={{ borderColor: COLORS.taupe }}>
-        {[{ id: "all", label: "الكل" }, ...CATEGORIES].map((c) => (
+        {[{ id: "all", label: "all" }, ...CATEGORIES].map((c) => (
           <button
             key={c.id}
             onClick={() => setActiveCat(c.id)}
@@ -406,7 +406,7 @@ function ProductView({ product, setView, addToCart }) {
   return (
     <section className="max-w-6xl mx-auto px-5 md:px-8 py-12">
       <button onClick={() => setView("shop")} className="text-sm flex items-center gap-1 mb-8" style={{ color: COLORS.mute, fontFamily: "Jost, sans-serif" }}>
-        <ChevronRight size={16} /> رجوع إلى المتجر
+        <ChevronRight size={16} /> Return to Shop
       </button>
       <div className="grid md:grid-cols-2 gap-10 md:gap-16">
         <img src={product.img} alt={product.name} className="w-full object-cover" style={{ aspectRatio: "4/5" }} />
@@ -444,16 +444,16 @@ function ProductView({ product, setView, addToCart }) {
             >
               {added ? (
                 <>
-                  <Check size={16} /> أُضيف للسلة
+                  <Check size={16} /> Added to Bag
                 </>
               ) : (
-                "أضيفي إلى السلة"
+                "Add to Bag"
               )}
             </button>
           </div>
           <div className="text-xs space-y-1" style={{ color: COLORS.mute, fontFamily: "Jost, sans-serif" }}>
-            <p>• توصيل خلال 3-5 أيام عمل</p>
-            <p>• إمكانية الإرجاع خلال 14 يومًا</p>
+            <p>• Shipping within 3-5 business days</p>
+            <p>• Return policy within 72 hours</p>
           </div>
         </div>
       </div>
@@ -476,15 +476,15 @@ function CartDrawer({ products, open, onClose, cart, updateQty, removeItem, setV
         style={{ backgroundColor: COLORS.ivory, transform: open ? "translateX(0)" : "translateX(100%)" }}
       >
         <div className="flex items-center justify-between px-6 py-5 border-b" style={{ borderColor: COLORS.taupe }}>
-          <h2 className="text-lg" style={{ fontFamily: "Fraunces, serif" }}>سلة المشتريات</h2>
-          <button onClick={onClose} aria-label="إغلاق">
+          <h2 className="text-lg" style={{ fontFamily: "Fraunces, serif" }}>Your Shopping Bag</h2>
+          <button onClick={onClose} aria-label="Close">
             <X size={20} />
           </button>
         </div>
         <div className="flex-1 overflow-y-auto px-6 py-4">
           {items.length === 0 && (
             <p className="text-sm mt-10 text-center" style={{ color: COLORS.mute, fontFamily: "Jost, sans-serif" }}>
-              سلتك فارغة حاليًا
+              Your Bag is currently empty
             </p>
           )}
           {items.map((i) => (
@@ -514,7 +514,7 @@ function CartDrawer({ products, open, onClose, cart, updateQty, removeItem, setV
         {items.length > 0 && (
           <div className="px-6 py-5 border-t" style={{ borderColor: COLORS.taupe }}>
             <div className="flex justify-between mb-4 text-sm" style={{ fontFamily: "Jost, sans-serif" }}>
-              <span>المجموع</span>
+              <span>Total</span>
               <span style={{ color: COLORS.wine }}>{formatPrice(total)}</span>
             </div>
             <button
@@ -525,7 +525,7 @@ function CartDrawer({ products, open, onClose, cart, updateQty, removeItem, setV
               className="w-full py-3.5 text-sm tracking-wide"
               style={{ backgroundColor: COLORS.ink, color: COLORS.ivory, fontFamily: "Jost, sans-serif" }}
             >
-              إتمام الطلب
+              Complete Order
             </button>
           </div>
         )}
@@ -550,9 +550,9 @@ function CheckoutView({ products, cart, setView, clearCart, recordOrder }) {
   if (items.length === 0 && step === "form") {
     return (
       <section className="max-w-xl mx-auto px-5 py-24 text-center">
-        <p className="text-lg mb-6" style={{ fontFamily: "Fraunces, serif" }}>سلتك فارغة</p>
+        <p className="text-lg mb-6" style={{ fontFamily: "Fraunces, serif" }}>Your Bag is currently empty</p>
         <button onClick={() => setView("shop")} className="px-6 py-3 text-sm" style={{ backgroundColor: COLORS.ink, color: COLORS.ivory, fontFamily: "Jost, sans-serif" }}>
-          تصفّحي المتجر
+          Return to Shop
         </button>
       </section>
     );
@@ -566,8 +566,7 @@ function CheckoutView({ products, cart, setView, clearCart, recordOrder }) {
         </div>
         <h1 className="text-2xl md:text-3xl mb-3" style={{ fontFamily: "Fraunces, serif" }}>تم استلام طلبك</h1>
         <p className="text-sm mb-8" style={{ color: COLORS.mute, fontFamily: "Jost, sans-serif" }}>
-          شكرًا لثقتك. سيتم التواصل معك لتأكيد التوصيل خلال 24 ساعة. (هذا عرض تجريبي، لا توجد عملية دفع فعلية)
-        </p>
+           Thank you for choosing AORA. your order is being carefully prepared with attention to every detail .
         <button
           onClick={() => {
             clearCart();
@@ -576,7 +575,7 @@ function CheckoutView({ products, cart, setView, clearCart, recordOrder }) {
           className="px-6 py-3 text-sm"
           style={{ backgroundColor: COLORS.ink, color: COLORS.ivory, fontFamily: "Jost, sans-serif" }}
         >
-          العودة للرئيسية
+          Return to Home
         </button>
       </section>
     );
@@ -717,8 +716,6 @@ function AboutView() {
         </h1>
         <p className="text-sm md:text-base leading-loose max-w-2xl mx-auto" style={{ color: COLORS.mute, fontFamily: "Jost, sans-serif", fontWeight: 300 }}>
           وُلدت AORA من شغف بالتفاصيل الصغيرة التي تصنع الفرق. نؤمن أن الأناقة الحقيقية لا تحتاج للصراخ،
-          بل تُروى بهدوء عبر جودة القماش، دقة الخياطة، وعطر يبقى في الذاكرة. كل قطعة تمر بين أيدي حرفيين
-          محليين قبل أن تصل إليك.
         </p>
       </div>
       <div className="grid grid-cols-3">
@@ -756,7 +753,7 @@ function AboutView() {
 
 function ContactView() {
   const [sent, setSent] = useState(false);
-  return (
+  return }(
     <section className="max-w-2xl mx-auto px-5 md:px-8 py-16">
       <h1 className="text-3xl mb-3 text-center" style={{ fontFamily: "Fraunces, serif" }}>تواصلي معنا</h1>
       <p className="text-sm text-center mb-10" style={{ color: COLORS.mute, fontFamily: "Jost, sans-serif" }}>
@@ -796,176 +793,9 @@ function ContactView() {
           <p className="text-xs mb-1" style={{ color: COLORS.bronze }}>الفرع</p>
           <p>الجزائر العاصمة</p>
         </div>
-      </div>
+      </div> 
     </section>
   );
-}
-
-function AdminView({ products, addProduct, deleteProduct, orders, ordersLoading }) {
-  const [authed, setAuthed] = useState(false);
-  const [passInput, setPassInput] = useState("");
-  const [passError, setPassError] = useState(false);
-  const [tab, setTab] = useState("orders");
-  const [form, setForm] = useState({ name: "", cat: "robes", price: "", img: "", description: "" });
-  const [saving, setSaving] = useState(false);
-
-  if (!authed) {
-    return (
-      <section className="max-w-sm mx-auto px-5 py-28 text-center">
-        <Lock size={26} className="mx-auto mb-4" color={COLORS.bronze} />
-        <h1 className="text-xl mb-6" style={{ fontFamily: "Fraunces, serif" }}>لوحة تحكم المتجر</h1>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (passInput === ADMIN_PASSCODE) {
-              setAuthed(true);
-              setPassError(false);
-            } else {
-              setPassError(true);
-            }
-          }}
-          className="space-y-3"
-        >
-          <input
-            type="password"
-            value={passInput}
-            onChange={(e) => setPassInput(e.target.value)}
-            placeholder="رمز الدخول"
-            className="w-full border px-4 py-3 text-sm text-center"
-            style={{ borderColor: COLORS.taupe, fontFamily: "Jost, sans-serif" }}
-          />
-          {passError && <p className="text-xs" style={{ color: COLORS.wine }}>رمز غير صحيح</p>}
-          <button type="submit" className="w-full py-3 text-sm" style={{ backgroundColor: COLORS.ink, color: COLORS.ivory, fontFamily: "Jost, sans-serif" }}>
-            دخول
-          </button>
-        </form>
-        <p className="text-xs mt-6" style={{ color: COLORS.mute, fontFamily: "Jost, sans-serif" }}>
-          الرمز الافتراضي: {ADMIN_PASSCODE} (يمكن تغييره من الكود في متغيّر ADMIN_PASSCODE)
-        </p>
-      </section>
-    );
-  }
-
-  const totalRevenue = orders.reduce((s, o) => s + o.total, 0);
-
-  return (
-    <section className="max-w-5xl mx-auto px-5 md:px-8 py-12">
-      <h1 className="text-2xl md:text-3xl mb-8" style={{ fontFamily: "Fraunces, serif" }}>لوحة التحكم</h1>
-      <div className="grid grid-cols-3 gap-4 mb-10">
-        <div className="border p-5" style={{ borderColor: COLORS.taupe }}>
-          <p className="text-xs mb-1" style={{ color: COLORS.mute, fontFamily: "Jost, sans-serif" }}>عدد الطلبيات</p>
-          <p className="text-2xl" style={{ fontFamily: "Fraunces, serif", color: COLORS.bronze }}>{orders.length}</p>
-        </div>
-        <div className="border p-5" style={{ borderColor: COLORS.taupe }}>
-          <p className="text-xs mb-1" style={{ color: COLORS.mute, fontFamily: "Jost, sans-serif" }}>إجمالي المبيعات</p>
-          <p className="text-2xl" style={{ fontFamily: "Fraunces, serif", color: COLORS.wine }}>{formatPrice(totalRevenue)}</p>
-        </div>
-        <div className="border p-5" style={{ borderColor: COLORS.taupe }}>
-          <p className="text-xs mb-1" style={{ color: COLORS.mute, fontFamily: "Jost, sans-serif" }}>عدد المنتجات</p>
-          <p className="text-2xl" style={{ fontFamily: "Fraunces, serif", color: COLORS.ink }}>{products.length}</p>
-        </div>
-      </div>
-
-      <div className="flex gap-3 mb-8 border-b" style={{ borderColor: COLORS.taupe }}>
-        {[
-          { id: "orders", label: "الطلبيات", icon: Package },
-          { id: "products", label: "إدارة المنتجات", icon: Settings },
-        ].map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            className="flex items-center gap-2 px-4 py-3 text-sm border-b-2 -mb-px"
-            style={{ borderColor: tab === t.id ? COLORS.bronze : "transparent", color: tab === t.id ? COLORS.ink : COLORS.mute, fontFamily: "Jost, sans-serif" }}
-          >
-            <t.icon size={15} /> {t.label}
-          </button>
-        ))}
-      </div>
-
-      {tab === "orders" && (
-        <div>
-          {ordersLoading ? (
-            <p className="text-sm" style={{ color: COLORS.mute, fontFamily: "Jost, sans-serif" }}>جارٍ التحميل...</p>
-          ) : orders.length === 0 ? (
-            <p className="text-sm" style={{ color: COLORS.mute, fontFamily: "Jost, sans-serif" }}>لا توجد طلبيات بعد</p>
-          ) : (
-            <div className="space-y-3">
-              {[...orders].reverse().map((o) => (
-                <div key={o.id} className="border p-4 text-sm" style={{ borderColor: COLORS.taupe, fontFamily: "Jost, sans-serif" }}>
-                  <div className="flex justify-between mb-2">
-                    <span>{o.customer?.name || "بدون اسم"} — {o.customer?.phone}</span>
-                    <span style={{ color: COLORS.bronze }}>{new Date(o.date).toLocaleString("ar-DZ")}</span>
-                  </div>
-                  <p className="text-xs mb-1" style={{ color: COLORS.mute }}>
-                    {o.customer?.wilaya}، {o.customer?.address}
-                  </p>
-                  <p className="text-xs mb-2" style={{ color: COLORS.mute }}>
-                    {o.delivery_type === "stopdesk" ? "استلام من مكتب التوصيل" : "توصيل للمنزل"} — رسوم التوصيل: {formatPrice(o.shipping_fee || 0)}
-                  </p>
-                  <ul className="text-xs mb-2" style={{ color: COLORS.mute }}>
-                    {o.items.map((it, idx) => (
-                      <li key={idx}>{it.name} × {it.qty}</li>
-                    ))}
-                  </ul>
-                  <p style={{ color: COLORS.wine }}>{formatPrice(o.total)}</p>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {tab === "products" && (
-        <div className="grid md:grid-cols-2 gap-10">
-          <form
-            className="space-y-3"
-            onSubmit={async (e) => {
-              e.preventDefault();
-              if (!form.name || !form.price) return;
-              setSaving(true);
-              await addProduct({ ...form, price: Number(form.price), img: form.img || `https://picsum.photos/seed/new${Date.now()}/600/750` });
-              setForm({ name: "", cat: "robes", price: "", img: "", description: "" });
-              setSaving(false);
-            }}
-          >
-            <h2 className="text-lg mb-3" style={{ fontFamily: "Fraunces, serif" }}>إضافة قطعة جديدة</h2>
-            <input required placeholder="اسم القطعة" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full border px-4 py-3 text-sm" style={{ borderColor: COLORS.taupe, fontFamily: "Jost, sans-serif" }} />
-            <select value={form.cat} onChange={(e) => setForm({ ...form, cat: e.target.value })} className="w-full border px-4 py-3 text-sm" style={{ borderColor: COLORS.taupe, fontFamily: "Jost, sans-serif" }}>
-              {CATEGORIES.map((c) => (
-                <option key={c.id} value={c.id}>{c.label}</option>
-              ))}
-            </select>
-            <input required type="number" min="0" placeholder="السعر (د.ج)" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className="w-full border px-4 py-3 text-sm" style={{ borderColor: COLORS.taupe, fontFamily: "Jost, sans-serif" }} />
-            <input placeholder="رابط الصورة (اختياري)" value={form.img} onChange={(e) => setForm({ ...form, img: e.target.value })} className="w-full border px-4 py-3 text-sm" style={{ borderColor: COLORS.taupe, fontFamily: "Jost, sans-serif" }} />
-            <textarea placeholder="الوصف" rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full border px-4 py-3 text-sm" style={{ borderColor: COLORS.taupe, fontFamily: "Jost, sans-serif" }} />
-            <button type="submit" disabled={saving} className="w-full py-3 text-sm" style={{ backgroundColor: COLORS.ink, color: COLORS.ivory, fontFamily: "Jost, sans-serif", opacity: saving ? 0.6 : 1 }}>
-              {saving ? "جارٍ الحفظ..." : "إضافة المنتج"}
-            </button>
-          </form>
-
-          <div>
-            <h2 className="text-lg mb-3" style={{ fontFamily: "Fraunces, serif" }}>المنتجات الحالية ({products.length})</h2>
-            <div className="space-y-2 max-h-[480px] overflow-y-auto pr-1">
-              {products.map((p) => (
-                <div key={p.id} className="flex items-center gap-3 border p-2" style={{ borderColor: COLORS.taupe }}>
-                  <img src={p.img} alt="" className="w-12 h-14 object-cover shrink-0" />
-                  <div className="flex-1 text-xs" style={{ fontFamily: "Jost, sans-serif" }}>
-                    <p>{p.name}</p>
-                    <p style={{ color: COLORS.bronze }}>{formatPrice(p.price)}</p>
-                  </div>
-                  <button onClick={() => deleteProduct(p.id)} aria-label="حذف المنتج">
-                    <Trash2 size={16} color={COLORS.wine} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-    </section>
-  );
-}
-
 export default function App() {
   const [view, setView] = useState("home");
   const [activeCat, setActiveCat] = useState("all");
