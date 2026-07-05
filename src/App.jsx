@@ -92,7 +92,7 @@ function formatPrice(n) {
 function Logo({ size = "text-2xl" , dark }) {
   return (
     <div className={`${size} tracking-[0.15em]`} style={{ fontFamily: "Fraunces, serif", color: dark ? COLORS.ink : COLORS.bronze }}>
-      AO <span style={{ color: COLORS.bronze }}>RA</span>
+      AO <span style={{ color: COLORS.bronze }}>AORA</span>
     </div>
   );
 }
@@ -739,7 +739,6 @@ function ContactView() {
       </div> 
     </section>
   );
-}
 export default function App() {
   const [view, setView] = useState("home");
   const [activeCat, setActiveCat] = useState("all");
