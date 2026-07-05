@@ -652,13 +652,13 @@ function AboutView() {
     <section>
       <div className="max-w-4xl mx-auto px-5 md:px-8 py-16 text-center">
         <p className="text-xs tracking-[0.3em] mb-4" style={{ color: COLORS.bronze, fontFamily: "Jost, sans-serif" }}>
-          منذ 2014
+          <Since></Since> Since 2019
         </p>
         <h1 className="text-3xl md:text-4xl mb-6" style={{ fontFamily: "Fraunces, serif", color: COLORS.ink }}>
-          قصتنا بدأت من ورشة صغيرة
+          Every Great Story Begins Somewhere—Ours Began in a Small Workshop 
         </h1>
         <p className="text-sm md:text-base leading-loose max-w-2xl mx-auto" style={{ color: COLORS.mute, fontFamily: "Jost, sans-serif", fontWeight: 300 }}>
-          وُلدت AORA من شغف بالتفاصيل الصغيرة التي تصنع الفرق. نؤمن أن الأناقة الحقيقية لا تحتاج للصراخ،
+           AORA was born from a passion for the little details that make a difference. We believe that true elegance doesn't need to shout,
         </p>
       </div>
       <div className="grid grid-cols-3">
@@ -668,7 +668,7 @@ function AboutView() {
       </div>
       <div className="max-w-2xl mx-auto px-5 md:px-8 py-16">
         <h2 className="text-2xl mb-8 text-center" style={{ fontFamily: "Fraunces, serif" }}>
-          الأسئلة الشائعة
+          FAQS 
         </h2>
         <div className="space-y-2">
           {FAQS.map((f, i) => (
