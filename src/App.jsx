@@ -651,9 +651,9 @@ function AboutView() {
   return (
     <section>
       <div className="max-w-4xl mx-auto px-5 md:px-8 py-16 text-center">
-        <p className="text-xs tracking-[0.3em] mb-4" style={{ color: COLORS.bronze, fontFamily: "Jost, sans-serif" }}>
-          <Since></Since> Since 2019
-        </p>
+        <p className="text-xs tracking-[0.3em] mb-4">
+  Since 2019
+</p>
         <h1 className="text-3xl md:text-4xl mb-6" style={{ fontFamily: "Fraunces, serif", color: COLORS.ink }}>
           Every Great Story Begins Somewhere—Ours Began in a Small Workshop 
         </h1>
