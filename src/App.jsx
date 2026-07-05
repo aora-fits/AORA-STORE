@@ -566,7 +566,7 @@ function CheckoutView({ products, cart, setView, clearCart, recordOrder }) {
         </div>
         <h1 className="text-2xl md:text-3xl mb-3" style={{ fontFamily: "Fraunces, serif" }}>تم استلام طلبك</h1>
         <p className="text-sm mb-8" style={{ color: COLORS.mute, fontFamily: "Jost, sans-serif" }}>
-           Thank you for choosing AORA. your order is being carefully prepared with attention to every detail .
+           Thank you for choosing AORA. your order is being carefully prepared with attention to every detail .</p>
         <button
           onClick={() => {
             clearCart();
