@@ -194,40 +194,6 @@ function Hero({ setView }) {
     </section>
   );
 }
-
-function CategoryRail({ setView, setActiveCat }) {
-  return (
-    <section className="max-w-6xl mx-auto px-5 md:px-8 py-16 md:py-20">
-      <div className="flex items-end justify-between mb-8">
-        <h2 className="text-2xl md:text-3xl" style={{ fontFamily: "Fraunces, serif", color: COLORS.ink }}>
-          تسوّقي حسب الفئة
-        </h2>
-      </div>
-      <div className="flex gap-4 overflow-x-auto pb-2 -mx-5 px-5 md:mx-0 md:px-0">
-        {CATEGORIES.map((c, i) => (
-          <button
-            key={c.id}
-            onClick={() => {
-              setActiveCat(c.id);
-              setView("shop");
-            }}
-            className="relative shrink-0 w-56 h-72 overflow-hidden group"
-          >
-            <img src={`https://picsum.photos/seed/noorcat${i}/400/500`} alt="" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-            <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(27,24,21,0.75), transparent 55%)" }} />
-            <span
-              className="absolute bottom-5 right-5 text-lg px-3 py-1"
-              style={{ fontFamily: "Fraunces, serif", color: COLORS.ivory, borderBottom: `2px solid ${COLORS.bronze}` }}
-            >
-              {c.label}
-            </span>
-          </button>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 function ProductCard({ p, setView, setSelectedId, addToCart }) {
   return (
     <div className="group">
@@ -276,27 +242,6 @@ function ProductCard({ p, setView, setSelectedId, addToCart }) {
     </div>
   );
 }
-
-function FeaturedGrid({ products, setView, setSelectedId, addToCart }) {
-  return (
-    <section className="max-w-6xl mx-auto px-5 md:px-8 pb-20">
-      <div className="flex items-end justify-between mb-8">
-        <h2 className="text-2xl md:text-3xl" style={{ fontFamily: "Fraunces, serif", color: COLORS.ink }}>
-          الأكثر طلبًا
-        </h2>
-        <button onClick={() => setView("shop")} className="text-sm flex items-center gap-1" style={{ color: COLORS.bronze, fontFamily: "Jost, sans-serif" }}>
-          كل المنتجات <ChevronLeft size={16} />
-        </button>
-      </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-x-5 gap-y-10">
-        {products.slice(0, 8).map((p) => (
-          <ProductCard key={p.id} p={p} setView={setView} setSelectedId={setSelectedId} addToCart={addToCart} />
-        ))}
-      </div>
-    </section>
-  );
-}
-
 function Banner() {
   return (
     <section className="py-20 text-center px-5" style={{ backgroundColor: COLORS.taupe }}>
