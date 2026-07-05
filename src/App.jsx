@@ -18,22 +18,10 @@ const COLORS = {
 };
 
 const CATEGORIES = [
-  { id: "robes", label: "فساتين" },
+  { id: "robes", label: "Dresses" },
 ];
 
-const DEFAULT_PRODUCTS = [
-  { id: 1, name: "فستان الحرير الأسود", cat: "robes", price: 14500, img: "https://picsum.photos/seed/noor1/600/750", description: "فستان طويل من الحرير الطبيعي بقصة انسيابية، مثالي للسهرات الفاخرة. خياطة يدوية بتفاصيل دقيقة عند الخصر." },
-  { id: 2, name: "فستان الكتان الرملي", cat: "robes", price: 9800, img: "https://picsum.photos/seed/noor2/600/750", description: "قصة نهارية أنيقة من الكتان الفاخر، بلون رملي دافئ يناسب الإطلالات اليومية الراقية." },
-  { id: 3, name: "فستان التول الوردي", cat: "robes", price: 16200, img: "https://picsum.photos/seed/noor3/600/750", description: "طبقات من التول الناعم فوق بطانة ساتان، لإطلالة حالمة في المناسبات الخاصة." },
-  { id: 4, name: "جاكيت الجلد البيج", cat: "vestes", price: 18900, img: "https://picsum.photos/seed/noor4/600/750", description: "جلد طبيعي فاخر بقصة كلاسيكية معدّلة، بطانة حريرية داخلية وأزرار نحاسية مصقولة." },
-  { id: 5, name: "جاكيت الصوف الكحلي", cat: "vestes", price: 15400, img: "https://picsum.photos/seed/noor5/600/750", description: "صوف إيطالي ثقيل الوزن، دافئ وأنيق، يناسب الأجواء الباردة دون التخلي عن الفخامة." },
-  { id: 6, name: "وشاح الحرير المطرز", cat: "accessoires", price: 4200, img: "https://picsum.photos/seed/noor6/600/750", description: "حرير طبيعي 100% مطرز يدويًا بخيوط ذهبية، لمسة أخيرة تكمل أي إطلالة." },
-  { id: 7, name: "حقيبة اليد الجلدية", cat: "accessoires", price: 11300, img: "https://picsum.photos/seed/noor7/600/750", description: "جلد إيطالي أصلي، تصميم هندسي بسيط بحزام قابل للفصل." },
-  { id: 8, name: "قرط اللؤلؤ الذهبي", cat: "accessoires", price: 3600, img: "https://picsum.photos/seed/noor8/600/750", description: "لؤلؤ طبيعي مطعّم بإطار ذهب عيار 18، قطعة تدوم مدى الحياة." },
-  { id: 9, name: "عطر ورد الليل", cat: "parfums", price: 7800, img: "https://picsum.photos/seed/noor9/600/750", description: "مزيج من الورد الدمشقي والعنبر والمسك الأبيض، عطر مسائي دافئ وحسي." },
-  { id: 10, name: "عطر زهر البرتقال", cat: "parfums", price: 6900, img: "https://picsum.photos/seed/noor10/600/750", description: "نفحات حمضية منعشة تتلاشى إلى قلب من الياسمين وخشب الصندل." },
-  { id: 11, name: "عطر العود الملكي", cat: "parfums", price: 9600, img: "https://picsum.photos/seed/noor11/600/750", description: "عود كمبودي أصيل ممزوج بالزعفران والعنبر، توقيع عطري لا يُنسى." },
-  { id: 12, name: "فستان الساتان الأسود", cat: "robes", price: 13700, img: "https://picsum.photos/seed/noor12/600/750", description: "ساتان لامع بقصة مستقيمة أنيقة، فتحة ظهر جريئة بلمسة كلاسيكية." },
+const DEFAULT_PRODUCTS =[
 ];
 
 const WILAYAS = [
@@ -111,10 +99,10 @@ function Logo({ size = "text-2xl" }) {
 
 function TopBar({ view, setView, cartCount, setCartOpen, menuOpen, setMenuOpen }) {
   const nav = [
-    { id: "home", label: "الرئيسية" },
-    { id: "shop", label: "المتجر" },
-    { id: "about", label: "قصتنا" },
-    { id: "contact", label: "تواصل معنا" },
+    { id: "home", label: "Home" },
+    { id: "shop", label: "Collection" },
+    { id: "about", label: "About" },
+    { id: "contact", label: "Contact" },
   ];
   return (
     <header className="sticky top-0 z-40 backdrop-blur border-b" style={{ backgroundColor: COLORS.ivory + "F2", borderColor: COLORS.taupe }}>
@@ -181,21 +169,18 @@ function Hero({ setView }) {
     <section className="relative overflow-hidden" style={{ backgroundColor: COLORS.ink }}>
       <div className="max-w-6xl mx-auto px-5 md:px-8 py-24 md:py-36 grid md:grid-cols-2 gap-10 items-center">
         <div>
-          <p className="text-xs tracking-[0.3em] mb-6" style={{ color: COLORS.bronze, fontFamily: "Jost, sans-serif" }}>
-            مجموعة خريف — شتاء
-          </p>
           <h1 className="text-4xl md:text-6xl leading-tight mb-6" style={{ fontFamily: "Fraunces, serif", color: COLORS.ivory }}>
-            كل قطعة حكاية <br /> تُروى بصمت
+            Creafted For You <br /> 
           </h1>
           <p className="text-base md:text-lg mb-10 max-w-md" style={{ color: COLORS.taupe, fontFamily: "Jost, sans-serif", fontWeight: 300 }}>
-            أزياء وعطور مصنوعة بعناية فائقة، لامرأة تعرف قيمة التفاصيل ولا تساوم عليها.
+            Every piece is thoughtfully crafted to express timeless elegance, refined quality, and effortless sophistication.
           </p>
           <button
             onClick={() => setView("shop")}
             className="px-8 py-3.5 text-sm tracking-wide transition-transform hover:-translate-y-0.5"
             style={{ backgroundColor: COLORS.bronze, color: COLORS.ink, fontFamily: "Jost, sans-serif" }}
           >
-            اكتشفي المجموعة
+             Discover More
           </button>
         </div>
         <div className="relative hidden md:block">
