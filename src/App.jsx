@@ -236,7 +236,7 @@ function ProductCard({ p, setView, setSelectedId, addToCart }) {
           onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = COLORS.ink)}
           onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
         >
-          أضيفي للسلة
+          Add to bag
         </button>
       </div>
     </div>
@@ -246,10 +246,10 @@ function Banner() {
   return (
     <section className="py-20 text-center px-5" style={{ backgroundColor: COLORS.taupe }}>
       <p className="text-xs tracking-[0.3em] mb-4" style={{ color: COLORS.wine, fontFamily: "Jost, sans-serif" }}>
-        صنع محدود
+         limited eddition
       </p>
       <h3 className="text-2xl md:text-4xl max-w-2xl mx-auto" style={{ fontFamily: "Fraunces, serif", color: COLORS.ink }}>
-        كل تصميم يُنتج بكميات محدودة جدًا، لأن الفخامة الحقيقية لا تُستنسخ
+        Each piece is thoughtfully crafted in limited quantities for those who appreciate timeless elegance and exceptional craftsmanship.
       </h3>
     </section>
   );
@@ -262,7 +262,7 @@ function Footer({ setView }) {
         <div>
           <Logo size="text-xl" dark />
           <p className="text-sm mt-4 leading-relaxed" style={{ color: COLORS.mute, fontFamily: "Jost, sans-serif", fontWeight: 300 }}>
-            أزياء وعطور فاخرة، بلمسة يدوية وهوية عربية أصيلة.
+            Each piece is thoughtfully crafted in limited quantities for those who appreciate timeless elegance and exceptional craftsmanship.
           </p>
         </div>
         {[
@@ -605,7 +605,7 @@ function CheckoutView({ products, cart, setView, clearCart, recordOrder }) {
           className="w-full py-4 text-sm tracking-wide mt-4"
           style={{ backgroundColor: COLORS.ink, color: COLORS.ivory, fontFamily: "Jost, sans-serif", opacity: !selectedWilaya ? 0.5 : 1 }}
         >
-          تأكيد الطلب — {formatPrice(total)}
+           order confirmation — {formatPrice(total)}
         </button>
       </form>
       <div className="md:col-span-2">
@@ -642,7 +642,7 @@ function CheckoutView({ products, cart, setView, clearCart, recordOrder }) {
 }
 const FAQS = [
   { q: "كم تستغرق مدة التوصيل؟", a: "يصل طلبك عادة خلال 3 إلى 5 أيام عمل داخل الوطن، وقد تختلف المدة حسب المنطقة." },
-  { q: "هل يمكنني إرجاع القطعة؟", a: "نعم، يمكن إرجاع أو استبدال أي قطعة خلال 14 يومًا من الاستلام بشرط أن تكون بحالتها الأصلية." },
+  { q: " يل يمكنني إرجاع القطعة؟", a: "نعم، يمكن إرجاع أو استبدال أي قطعة خلال 72 ساعة من الاستلام بشرط أن تكون بحالتها الأصلية." },
   { q: "هل التوصيل متوفر لكل الولايات؟", a: "نغطي جميع الولايات عبر شركائنا في التوصيل، مع خيار الدفع عند الاستلام." },
 ];
 
@@ -698,9 +698,9 @@ function ContactView() {
   const [sent, setSent] = useState(false);
   return (
     <section className="max-w-2xl mx-auto px-5 md:px-8 py-16">
-      <h1 className="text-3xl mb-3 text-center" style={{ fontFamily: "Fraunces, serif" }}>تواصلي معنا</h1>
+      <h1 className="text-3xl mb-3 text-center" style={{ fontFamily: "Fraunces, serif" }}> Contact us</h1>
       <p className="text-sm text-center mb-10" style={{ color: COLORS.mute, fontFamily: "Jost, sans-serif" }}>
-        نسعد بالإجابة عن استفساراتك خلال يوم عمل واحد.
+        We are happy to answer your questions within one business day.
       </p>
       {sent ? (
         <div className="text-center py-10">
