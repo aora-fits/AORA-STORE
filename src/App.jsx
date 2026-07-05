@@ -89,9 +89,9 @@ function formatPrice(n) {
   return n.toLocaleString("ar-DZ") + " د.ج";
 }
 
-function Logo({ size = "text-2xl" }) {
+function Logo({ size = "text-2xl" , dark }) {
   return (
-    <div className={`${size} tracking-[0.15em]`} style={{ fontFamily: "Fraunces, serif", color: COLORS.ink }}>
+    <div className={`${size} tracking-[0.15em]`} style={{ fontFamily: "Fraunces, serif", color: dark ? COLORS.ink : COLORS.bronze }}>
       AO <span style={{ color: COLORS.bronze }}>RA</span>
     </div>
   );
@@ -260,7 +260,7 @@ function Footer({ setView }) {
     <footer className="pt-16 pb-8 px-5 md:px-8" style={{ backgroundColor: COLORS.ink }}>
       <div className="max-w-6xl mx-auto grid md:grid-cols-4 gap-10 mb-12">
         <div>
-          <Logo size="text-xl" />
+          <Logo size="text-xl" dark />
           <p className="text-sm mt-4 leading-relaxed" style={{ color: COLORS.mute, fontFamily: "Jost, sans-serif", fontWeight: 300 }}>
             أزياء وعطور فاخرة، بلمسة يدوية وهوية عربية أصيلة.
           </p>
