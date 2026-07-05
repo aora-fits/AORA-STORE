@@ -1,0 +1,17 @@
+# Query: sent
+# ContextLines: 1
+
+4 results - 1 file
+
+src\App.jsx:
+  754  function ContactView() {
+  755:   const [sent, setSent] = useState(false);
+  756    return (
+
+  761        </p>
+  762:       {sent ? (
+  763          <div className="text-center py-10">
+
+  771              e.preventDefault();
+  772:             setSent(true);
+  773            }}

@@ -753,7 +753,7 @@ function AboutView() {
 
 function ContactView() {
   const [sent, setSent] = useState(false);
-  return }(
+  return (
     <section className="max-w-2xl mx-auto px-5 md:px-8 py-16">
       <h1 className="text-3xl mb-3 text-center" style={{ fontFamily: "Fraunces, serif" }}>تواصلي معنا</h1>
       <p className="text-sm text-center mb-10" style={{ color: COLORS.mute, fontFamily: "Jost, sans-serif" }}>
@@ -796,6 +796,7 @@ function ContactView() {
       </div> 
     </section>
   );
+}
 export default function App() {
   const [view, setView] = useState("home");
   const [activeCat, setActiveCat] = useState("all");
