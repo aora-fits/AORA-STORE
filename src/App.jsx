@@ -180,13 +180,6 @@ function Hero({ setView }) {
           <p className="text-base md:text-lg mb-10 max-w-md" style={{ color: COLORS.taupe, fontFamily: "Jost, sans-serif", fontWeight: 300 }}>
             Every piece is thoughtfully crafted to express timeless elegance, refined quality, and effortless sophistication.
           </p>
-          <button
-            onClick={() => setView("shop")}
-            className="px-8 py-3.5 text-sm tracking-wide transition-transform hover:-translate-y-0.5"
-            style={{ backgroundColor: COLORS.bronze, color: COLORS.ink, fontFamily: "Jost, sans-serif" }}
-          >
-            Discover More
-          </button>
         </div>
         <div className="relative block">
 <video
