@@ -266,6 +266,7 @@ function Footer({ setView }) {
           </p>
         </div>
         {[
+
           { title: " Costumer Care", items: ["Shipping & Delivery", "Returns & Exchanges", "FAQ", "Contact Us"] },
           { title: "Follow Us", items: ["Instagram", "Facebook", "TikTok"] },
         ].map((col) => (
@@ -298,7 +299,9 @@ function Footer({ setView }) {
         ))}
       </div>
       <div className="max-w-6xl mx-auto pt-6 border-t flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-center" style={{ borderColor: "#3a352f", color: COLORS.mute, fontFamily: "Jost, sans-serif" }}>
-        <span>© 2026 AORA  .All rights reserved.made by <eabdou className="bch"></eabdou></span>
+        <span>© 2026 AORA. All rights reserved. Made by ABDOU</span>
+        <button onClick={() => setView("admin")} className="underline opacity-70 hover:opacity-100">
+          لوحة تحكم المتجر
         </button>
       </div>
     </footer>
