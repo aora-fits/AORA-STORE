@@ -188,7 +188,7 @@ function Hero({ setView }) {
             Discover More
           </button>
         </div>
-        <div className="relative hidden md:block">
+        <div className="relative block">
 <video
   autoPlay
   loop
