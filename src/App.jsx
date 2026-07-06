@@ -189,10 +189,18 @@ function Hero({ setView }) {
           </button>
         </div>
         <div className="relative hidden md:block">
-          <img src="https://picsum.photos/seed/noorhero/700/850" alt="" className="w-full h-[520px] object-cover" style={{ filter: "grayscale(15%)" }} />
+<video
+  autoPlay
+  loop
+  muted
+  playsInline
+  className="w-full h-[520px] object-cover"
+>
+  <source src="/videos/hero.mp4" type="video/mp4" />
+</video>
           <div className="absolute -bottom-6 -right-6 px-6 py-4" style={{ backgroundColor: COLORS.bronze }}>
-            <p className="text-xs" style={{ fontFamily: "Jost, sans-serif", color: COLORS.ink }}>خياطة يدوية</p>
-            <p className="text-lg" style={{ fontFamily: "Fraunces, serif", color: COLORS.ink }}>منذ 2014</p>
+            <p className="text-xs" style={{ fontFamily: "Jost, sans-serif", color: COLORS.ink }}> HERITAGE</p>
+            <p className="text-lg" style={{ fontFamily: "Fraunces, serif", color: COLORS.ink }}>Since 2019</p>
           </div>
         </div>
       </div>
