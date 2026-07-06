@@ -18,7 +18,7 @@ const COLORS = {
 };
 
 const CATEGORIES = [
-  { id: "robes", label: "Dresses" },
+
 ];
 
 const DEFAULT_PRODUCTS =[
@@ -92,7 +92,7 @@ function formatPrice(n) {
 function Logo({ size = "text-2xl" , dark }) {
   return (
     <div className={`${size} tracking-[0.15em]`} style={{ fontFamily: "Fraunces, serif", color: dark ? COLORS.ink : COLORS.bronze }}>
-      AO <span style={{ color: COLORS.bronze }}>AORA</span>
+      AO <span style={{ color: COLORS.bronze }}>RA</span>
     </div>
   );
 }
@@ -299,6 +299,14 @@ function HomeView({ products, setView, setActiveCat, setSelectedId, addToCart })
     <>
       <Hero setView={setView} />
       <Banner />
+      <ShopView
+        products={products}
+        activeCat="all"
+        setActiveCat={() => {}}
+        setView={setView}
+    setSelectedId={setSelectedId}
+    addToCart={addToCart}
+  />
     </>
   );
 }
@@ -307,7 +315,7 @@ function ShopView({ products, activeCat, setActiveCat, setView, setSelectedId, a
   const filtered = useMemo(() => (activeCat === "all" ? products : products.filter((p) => p.cat === activeCat)), [activeCat, products]);
   return (
     <section className="max-w-6xl mx-auto px-5 md:px-8 py-14">
-      <h1 className="text-3xl md:text-4xl mb-8" style={{ fontFamily: "Fraunces, serif", color: COLORS.ink }}>
+      <h1 className="text-3xl md:text-4xl mb-8" style={{ textAlign: "center", fontFamily: "Fraunces, serif", color: COLORS.ink }}>
         shop
       </h1>
       <div className="flex gap-3 overflow-x-auto pb-6 mb-6 border-b" style={{ borderColor: COLORS.taupe }}>
