@@ -2,14 +2,14 @@ import React, { useState, useMemo, useEffect } from "react";
 import { ShoppingBag, X, Plus, Minus, Search, Menu, ChevronLeft, ChevronRight, Heart, Check, ChevronDown, Lock, Trash2, Package, Settings } from "lucide-react";
 import { supabase } from "./supabaseClient";
 
-const ADMIN_PASSCODE = "9922"; // غيّريه لأي رمز تحبينه
+const ADMIN_PASSCODE = "230615"; // غيّريه لأي رمز تحبينه
 
 const FONTS = `
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,450;0,9..144,600;1,9..144,450&family=Jost:wght@300;400;500;600&display=swap');
 `;
 
 const COLORS = {
-  ink: "#1B1815",
+  ink: "#382615",
   ivory: "#EFE8D6",
   taupe: "#DCD0B4",
   bronze: "#A47B3D",
@@ -21,7 +21,7 @@ const CATEGORIES = [
 
 ];
 
-const DEFAULT_PRODUCTS =[
+const DEFAULT_PRODUCTS = [
 ];
 
 const WILAYAS = [
@@ -89,7 +89,7 @@ function formatPrice(n) {
   return n.toLocaleString("ar-DZ") + " د.ج";
 }
 
-function Logo({ size = "text-2xl" , dark }) {
+function Logo({ size = "text-2xl", dark }) {
   return (
     <div className={`${size} tracking-[0.15em]`} style={{ fontFamily: "Fraunces, serif", color: dark ? COLORS.ink : COLORS.bronze }}>
       AO <span style={{ color: COLORS.bronze }}>RA</span>
@@ -100,9 +100,7 @@ function Logo({ size = "text-2xl" , dark }) {
 function TopBar({ view, setView, cartCount, setCartOpen, menuOpen, setMenuOpen }) {
   const nav = [
     { id: "home", label: "Home" },
-    { id: " shop", label: "Collection" },
     { id: "about", label: "About" },
-    { id: "contact", label: "Contact" },
   ];
   return (
     <header className="sticky top-0 z-40 backdrop-blur border-b" style={{ backgroundColor: COLORS.ivory + "F2", borderColor: COLORS.taupe }}>
@@ -170,7 +168,7 @@ function Hero({ setView }) {
       <div className="max-w-6xl mx-auto px-5 md:px-8 py-24 md:py-36 grid md:grid-cols-2 gap-10 items-center">
         <div>
           <h1 className="text-4xl md:text-6xl leading-tight mb-6" style={{ fontFamily: "Fraunces, serif", color: COLORS.ivory }}>
-            Creafted For You <br /> 
+            Crafted For You <br />
           </h1>
           <p className="text-base md:text-lg mb-10 max-w-md" style={{ color: COLORS.taupe, fontFamily: "Jost, sans-serif", fontWeight: 300 }}>
             Every piece is thoughtfully crafted to express timeless elegance, refined quality, and effortless sophistication.
@@ -180,7 +178,7 @@ function Hero({ setView }) {
             className="px-8 py-3.5 text-sm tracking-wide transition-transform hover:-translate-y-0.5"
             style={{ backgroundColor: COLORS.bronze, color: COLORS.ink, fontFamily: "Jost, sans-serif" }}
           >
-             Discover More
+            Discover More
           </button>
         </div>
         <div className="relative hidden md:block">
@@ -194,6 +192,7 @@ function Hero({ setView }) {
     </section>
   );
 }
+
 function ProductCard({ p, setView, setSelectedId, addToCart }) {
   return (
     <div className="group">
@@ -242,11 +241,12 @@ function ProductCard({ p, setView, setSelectedId, addToCart }) {
     </div>
   );
 }
+
 function Banner() {
   return (
     <section className="py-20 text-center px-5" style={{ backgroundColor: COLORS.taupe }}>
       <p className="text-xs tracking-[0.3em] mb-4" style={{ color: COLORS.wine, fontFamily: "Jost, sans-serif" }}>
-         limited eddition
+        Limited Edition
       </p>
       <h3 className="text-2xl md:text-4xl max-w-2xl mx-auto" style={{ fontFamily: "Fraunces, serif", color: COLORS.ink }}>
         Each piece is thoughtfully crafted in limited quantities for those who appreciate timeless elegance and exceptional craftsmanship.
@@ -266,40 +266,65 @@ function Footer({ setView }) {
           </p>
         </div>
         {[
-
-          { title: " Costumer Care", items: ["Shipping & Delivery", "Returns & Exchanges", "FAQ", "Contact Us"] },
+          { title: "Customer Care", items: ["Shipping & Delivery", "Returns & Exchanges", "FAQ", "Contact Us"] },
           { title: "Follow Us", items: ["Instagram", "Facebook", "TikTok"] },
         ].map((col) => (
           <div key={col.title}>
-            <p className="text-sm mb-4" style={{ color: COLORS.bronze, fontFamily: "Jost, sans-serif" }}>
-              {col.title}
-            </p>
+            {col.title === "Customer Care" ? (
+              <button
+                onClick={() => setView("customer-care")}
+                className="text-sm mb-4"
+                style={{ color: COLORS.bronze, fontFamily: "Jost, sans-serif" }}
+              >
+                {col.title}
+              </button>
+            ) : (
+              <p className="text-sm mb-4" style={{ color: COLORS.bronze, fontFamily: "Jost, sans-serif" }}>
+                {col.title}
+              </p>
+            )}
             <ul className="space-y-2">
               {col.items.map((it) => (
                 <li key={it}>
-  <a
-    href={
-      it === "Instagram"
-        ? "https://instagram.com/eabdou.bch"
-        : it === "Facebook"
-        ? "https://facebook.com/اسم_صفحتك"
-        : "https://tiktok.com/@اسم_حسابك"
-    }
-    target="_blank"
-    rel="noopener noreferrer"
-    className="text-sm"
-    style={{ color: COLORS.taupe, fontFamily: "Jost, sans-serif" }}
-  >
-    {it}
-  </a>
-</li>
+                  <a
+                    href={
+                      it === "Instagram"
+                        ? "https://instagram.com/eabdou.bch"
+                        : it === "Facebook"
+                        ? "https://facebook.com/اسم_صفحتك"
+                        : it === "TikTok"
+                        ? "https://tiktok.com/@اسم_حسابك"
+                        : "#"
+                    }
+                    onClick={(e) => {
+                      if (it === "Shipping & Delivery") {
+                        e.preventDefault();
+                        setView("shipping");
+                      } else if (it === "Returns & Exchanges") {
+                        e.preventDefault();
+                        setView("returns");
+                      } else if (it === "FAQ") {
+                        e.preventDefault();
+                        setView("faq");
+                      } else if (it === "Contact Us") {
+                        e.preventDefault();
+                        setView("contact");
+                      }
+                    }}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm"
+                  >
+                    {it}
+                  </a>
+                </li>
               ))}
             </ul>
           </div>
         ))}
       </div>
       <div className="max-w-6xl mx-auto pt-6 border-t flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-center" style={{ borderColor: "#3a352f", color: COLORS.mute, fontFamily: "Jost, sans-serif" }}>
-        <span>© 2026 AORA. All rights reserved. Made by ABDOU</span>
+        <span>© 2026 AORA. All rights reserved. Made by Abdou</span>
         <button onClick={() => setView("admin")} className="underline opacity-70 hover:opacity-100">
           لوحة تحكم المتجر
         </button>
@@ -318,9 +343,9 @@ function HomeView({ products, setView, setActiveCat, setSelectedId, addToCart })
         activeCat="all"
         setActiveCat={() => {}}
         setView={setView}
-    setSelectedId={setSelectedId}
-    addToCart={addToCart}
-  />
+        setSelectedId={setSelectedId}
+        addToCart={addToCart}
+      />
     </>
   );
 }
@@ -531,7 +556,8 @@ function CheckoutView({ products, cart, setView, clearCart, recordOrder }) {
         </div>
         <h1 className="text-2xl md:text-3xl mb-3" style={{ fontFamily: "Fraunces, serif" }}>تم استلام طلبك</h1>
         <p className="text-sm mb-8" style={{ color: COLORS.mute, fontFamily: "Jost, sans-serif" }}>
-           Thank you for choosing AORA. your order is being carefully prepared with attention to every detail .</p>
+          Thank you for choosing AORA. Your order is being carefully prepared with attention to every detail.
+        </p>
         <button
           onClick={() => {
             clearCart();
@@ -627,7 +653,7 @@ function CheckoutView({ products, cart, setView, clearCart, recordOrder }) {
           className="w-full py-4 text-sm tracking-wide mt-4"
           style={{ backgroundColor: COLORS.ink, color: COLORS.ivory, fontFamily: "Jost, sans-serif", opacity: !selectedWilaya ? 0.5 : 1 }}
         >
-           order confirmation — {formatPrice(total)}
+          Confirm Order — {formatPrice(total)}
         </button>
       </form>
       <div className="md:col-span-2">
@@ -662,9 +688,10 @@ function CheckoutView({ products, cart, setView, clearCart, recordOrder }) {
     </section>
   );
 }
+
 const FAQS = [
   { q: "كم تستغرق مدة التوصيل؟", a: "يصل طلبك عادة خلال 3 إلى 5 أيام عمل داخل الوطن، وقد تختلف المدة حسب المنطقة." },
-  { q: " يل يمكنني إرجاع القطعة؟", a: "نعم، يمكن إرجاع أو استبدال أي قطعة خلال 72 ساعة من الاستلام بشرط أن تكون بحالتها الأصلية." },
+  { q: "هل يمكنني إرجاع القطعة؟", a: "نعم، يمكن إرجاع أو استبدال أي قطعة خلال 72 ساعة من الاستلام بشرط أن تكون بحالتها الأصلية." },
   { q: "هل التوصيل متوفر لكل الولايات؟", a: "نغطي جميع الولايات عبر شركائنا في التوصيل، مع خيار الدفع عند الاستلام." },
 ];
 
@@ -674,13 +701,13 @@ function AboutView() {
     <section>
       <div className="max-w-4xl mx-auto px-5 md:px-8 py-16 text-center">
         <p className="text-xs tracking-[0.3em] mb-4">
-  Since 2019
-</p>
+          Since 2019
+        </p>
         <h1 className="text-3xl md:text-4xl mb-6" style={{ fontFamily: "Fraunces, serif", color: COLORS.ink }}>
-          Every Great Story Begins Somewhere—Ours Began in a Small Workshop 
+          Every Great Story Begins Somewhere—Ours Began in a Small Workshop
         </h1>
         <p className="text-sm md:text-base leading-loose max-w-2xl mx-auto" style={{ color: COLORS.mute, fontFamily: "Jost, sans-serif", fontWeight: 300 }}>
-           AORA was born from a passion for the little details that make a difference. We believe that true elegance doesn't need to shout,
+          AORA was born from a passion for the little details that make a difference. We believe that true elegance doesn't need to shout.
         </p>
       </div>
       <div className="grid grid-cols-3">
@@ -690,7 +717,7 @@ function AboutView() {
       </div>
       <div className="max-w-2xl mx-auto px-5 md:px-8 py-16">
         <h2 className="text-2xl mb-8 text-center" style={{ fontFamily: "Fraunces, serif" }}>
-          FAQS 
+          FAQS
         </h2>
         <div className="space-y-2">
           {FAQS.map((f, i) => (
@@ -716,11 +743,78 @@ function AboutView() {
   );
 }
 
+function ShippingView() {
+  return (
+    <section className="max-w-4xl mx-auto px-5 py-16">
+      <h1 className="text-4xl mb-8" style={{ fontFamily: "Fraunces, serif", color: COLORS.ink }}>
+        Shipping & Delivery
+      </h1>
+      <p className="mb-6">We ship worldwide with trusted courier partners.</p>
+      <h2 className="text-2xl mb-3">Processing Time</h2>
+      <p className="mb-6">Orders are processed within 1–2 business days.</p>
+      <h2 className="text-2xl mb-3">Delivery Time</h2>
+      <p className="mb-6">Delivery usually takes 3–5 business days depending on the destination.</p>
+      <h2 className="text-2xl mb-3">Tracking</h2>
+      <p>A tracking number will be sent by email once your order has shipped.</p>
+    </section>
+  );
+}
+
+function ReturnsView() {
+  return (
+    <section className="max-w-4xl mx-auto px-5 py-16">
+      <h1 className="text-4xl mb-8" style={{ fontFamily: "Fraunces, serif", color: COLORS.ink }}>
+        Returns & Exchanges
+      </h1>
+      <p className="mb-6">We want you to be completely satisfied with your purchase.</p>
+      <h2 className="text-2xl mb-3">Return Policy</h2>
+      <p className="mb-6">
+        You may return items within 72 hours of delivery if they are unused, undamaged, and in their original packaging.
+      </p>
+      <h2 className="text-2xl mb-3">Exchanges</h2>
+      <p className="mb-6">
+        If you received the wrong item or a defective product, we will gladly replace it at no additional cost.
+      </p>
+      <h2 className="text-2xl mb-3">Refunds</h2>
+      <p>Refunds are processed within 5–7 business days after we receive and inspect the returned item.</p>
+    </section>
+  );
+}
+
+function FaqView() {
+  return (
+    <section className="max-w-4xl mx-auto px-5 py-16">
+      <h1 className="text-4xl mb-8" style={{ fontFamily: "Fraunces, serif", color: COLORS.ink }}>
+        Frequently Asked Questions
+      </h1>
+      <h2 className="text-2xl mb-3">How long does shipping take?</h2>
+      <p className="mb-6">Orders are delivered within 3–5 business days depending on your location.</p>
+      <h2 className="text-2xl mb-3">Can I return my order?</h2>
+      <p className="mb-6">Yes. Returns are accepted within 72 hours if the item is unused and in its original condition.</p>
+      <h2 className="text-2xl mb-3">How can I contact AORA?</h2>
+      <p>You can contact us anytime through the Contact page. We usually reply within one business day.</p>
+    </section>
+  );
+}
+
+function CustomerCareView() {
+  return (
+    <section className="max-w-3xl mx-auto px-5 md:px-8 py-16">
+      <h1 className="text-3xl md:text-4xl mb-6" style={{ fontFamily: "Fraunces, serif", color: COLORS.ink }}>
+        Customer Care
+      </h1>
+      <p className="text-sm leading-relaxed" style={{ color: COLORS.mute, fontFamily: "Jost, sans-serif" }}>
+        نحن هنا لمساعدتك في أي وقت. لأي استفسار حول طلبك أو منتجاتنا، لا تترددي في التواصل معنا عبر صفحة "اتصل بنا".
+      </p>
+    </section>
+  );
+}
+
 function ContactView() {
   const [sent, setSent] = useState(false);
   return (
     <section className="max-w-2xl mx-auto px-5 md:px-8 py-16">
-      <h1 className="text-3xl mb-3 text-center" style={{ fontFamily: "Fraunces, serif" }}> Contact us</h1>
+      <h1 className="text-3xl mb-3 text-center" style={{ fontFamily: "Fraunces, serif" }}>Contact us</h1>
       <p className="text-sm text-center mb-10" style={{ color: COLORS.mute, fontFamily: "Jost, sans-serif" }}>
         We are happy to answer your questions within one business day.
       </p>
@@ -758,10 +852,150 @@ function ContactView() {
           <p className="text-xs mb-1" style={{ color: COLORS.bronze }}>الفرع</p>
           <p>الجزائر العاصمة</p>
         </div>
-      </div> 
+      </div>
     </section>
   );
+}
+
+function AdminView({ products, addProduct, deleteProduct, orders, ordersLoading }) {
+  const [unlocked, setUnlocked] = useState(false);
+  const [code, setCode] = useState("");
+  const [tab, setTab] = useState("products");
+  const [form, setForm] = useState({ name: "", price: "", img: "", description: "", cat: "robes" });
+
+  if (!unlocked) {
+    return (
+      <section className="max-w-sm mx-auto px-5 py-24 text-center">
+        <Lock size={22} color={COLORS.bronze} className="mx-auto mb-4" />
+        <h1 className="text-xl mb-6" style={{ fontFamily: "Fraunces, serif" }}>لوحة تحكم المتجر</h1>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (code === ADMIN_PASSCODE) setUnlocked(true);
+            else alert("رمز غير صحيح");
+          }}
+          className="space-y-3"
+        >
+          <input
+            type="password"
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+            placeholder="رمز الدخول"
+            className="w-full border px-4 py-3 text-sm text-center"
+            style={{ borderColor: COLORS.taupe, fontFamily: "Jost, sans-serif" }}
+          />
+          <button type="submit" className="w-full py-3 text-sm" style={{ backgroundColor: COLORS.ink, color: COLORS.ivory, fontFamily: "Jost, sans-serif" }}>
+            دخول
+          </button>
+        </form>
+      </section>
+    );
   }
+
+  return (
+    <section className="max-w-5xl mx-auto px-5 md:px-8 py-14">
+      <h1 className="text-2xl md:text-3xl mb-8" style={{ fontFamily: "Fraunces, serif", color: COLORS.ink }}>
+        لوحة تحكم المتجر
+      </h1>
+      <div className="flex gap-3 mb-8 border-b" style={{ borderColor: COLORS.taupe }}>
+        <button
+          onClick={() => setTab("products")}
+          className="flex items-center gap-2 text-sm px-4 py-3 border-b-2"
+          style={{ fontFamily: "Jost, sans-serif", borderColor: tab === "products" ? COLORS.bronze : "transparent", color: tab === "products" ? COLORS.ink : COLORS.mute }}
+        >
+          <Package size={15} /> المنتجات
+        </button>
+        <button
+          onClick={() => setTab("orders")}
+          className="flex items-center gap-2 text-sm px-4 py-3 border-b-2"
+          style={{ fontFamily: "Jost, sans-serif", borderColor: tab === "orders" ? COLORS.bronze : "transparent", color: tab === "orders" ? COLORS.ink : COLORS.mute }}
+        >
+          <Settings size={15} /> الطلبيات
+        </button>
+      </div>
+
+      {tab === "products" && (
+        <div className="grid md:grid-cols-2 gap-10">
+          <div>
+            <h2 className="text-lg mb-4" style={{ fontFamily: "Fraunces, serif" }}>إضافة منتج</h2>
+            <form
+              className="space-y-3"
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!form.name || !form.price) return;
+                addProduct({
+                  name: form.name,
+                  price: Number(form.price),
+                  img: form.img || "https://picsum.photos/seed/" + Date.now() + "/600/750",
+                  description: form.description,
+                  cat: form.cat,
+                });
+                setForm({ name: "", price: "", img: "", description: "", cat: "robes" });
+              }}
+            >
+              <input required placeholder="اسم المنتج" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full border px-4 py-3 text-sm" style={{ borderColor: COLORS.taupe, fontFamily: "Jost, sans-serif" }} />
+              <input required type="number" placeholder="السعر" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className="w-full border px-4 py-3 text-sm" style={{ borderColor: COLORS.taupe, fontFamily: "Jost, sans-serif" }} />
+              <input placeholder="رابط الصورة (اختياري)" value={form.img} onChange={(e) => setForm({ ...form, img: e.target.value })} className="w-full border px-4 py-3 text-sm" style={{ borderColor: COLORS.taupe, fontFamily: "Jost, sans-serif" }} />
+              <textarea placeholder="الوصف" rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full border px-4 py-3 text-sm" style={{ borderColor: COLORS.taupe, fontFamily: "Jost, sans-serif" }} />
+              <button type="submit" className="flex items-center justify-center gap-2 w-full py-3 text-sm" style={{ backgroundColor: COLORS.ink, color: COLORS.ivory, fontFamily: "Jost, sans-serif" }}>
+                <Plus size={15} /> إضافة
+              </button>
+            </form>
+          </div>
+          <div>
+            <h2 className="text-lg mb-4" style={{ fontFamily: "Fraunces, serif" }}>المنتجات الحالية ({products.length})</h2>
+            <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
+              {products.map((p) => (
+                <div key={p.id} className="flex items-center gap-3 border p-3" style={{ borderColor: COLORS.taupe }}>
+                  <img src={p.img} alt="" className="w-12 h-14 object-cover shrink-0" />
+                  <div className="flex-1 text-sm" style={{ fontFamily: "Jost, sans-serif" }}>
+                    <p>{p.name}</p>
+                    <p style={{ color: COLORS.bronze }}>{formatPrice(p.price)}</p>
+                  </div>
+                  <button onClick={() => deleteProduct(p.id)} aria-label="حذف">
+                    <Trash2 size={16} color={COLORS.wine} />
+                  </button>
+                </div>
+              ))}
+              {products.length === 0 && (
+                <p className="text-sm" style={{ color: COLORS.mute, fontFamily: "Jost, sans-serif" }}>
+                  لا توجد منتجات بعد
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {tab === "orders" && (
+        <div>
+          {ordersLoading ? (
+            <p className="text-sm" style={{ color: COLORS.mute, fontFamily: "Jost, sans-serif" }}>جارٍ تحميل الطلبيات...</p>
+          ) : orders.length === 0 ? (
+            <p className="text-sm" style={{ color: COLORS.mute, fontFamily: "Jost, sans-serif" }}>لا توجد طلبيات بعد</p>
+          ) : (
+            <div className="space-y-4">
+              {orders.map((o) => (
+                <div key={o.id} className="border p-4 text-sm" style={{ borderColor: COLORS.taupe, fontFamily: "Jost, sans-serif" }}>
+                  <div className="flex justify-between mb-2">
+                    <span>{o.customer?.name}</span>
+                    <span style={{ color: COLORS.bronze }}>{formatPrice(o.total)}</span>
+                  </div>
+                  <p style={{ color: COLORS.mute }} dir="ltr">{o.customer?.phone}</p>
+                  <p style={{ color: COLORS.mute }}>{o.customer?.wilaya} — {o.customer?.address}</p>
+                  <p style={{ color: COLORS.mute }} className="mt-1">
+                    {o.items?.map((it) => `${it.name} x${it.qty}`).join("، ")}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
 export default function App() {
   const [view, setView] = useState("home");
   const [activeCat, setActiveCat] = useState("all");
@@ -775,7 +1009,6 @@ export default function App() {
   const [orders, setOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
 
-  // تحميل المنتجات من قاعدة البيانات، وزرعها لأول مرة إذا كانت فارغة
   useEffect(() => {
     (async () => {
       const { data, error } = await supabase.from("products").select("*").order("id", { ascending: true });
@@ -794,7 +1027,6 @@ export default function App() {
     })();
   }, []);
 
-  // تحميل الطلبيات (تُقرأ فقط عند فتح لوحة التحكم)
   const loadOrders = async () => {
     setOrdersLoading(true);
     const { data, error } = await supabase.from("orders").select("*").order("id", { ascending: false });
@@ -861,6 +1093,10 @@ export default function App() {
           {view === "product" && <ProductView product={selectedProduct} setView={setView} addToCart={addToCart} />}
           {view === "checkout" && <CheckoutView products={products} cart={cart} setView={setView} clearCart={clearCart} recordOrder={recordOrder} />}
           {view === "about" && <AboutView />}
+          {view === "customer-care" && <CustomerCareView />}
+          {view === "shipping" && <ShippingView />}
+          {view === "returns" && <ReturnsView />}
+          {view === "faq" && <FaqView />}
           {view === "contact" && <ContactView />}
           {view === "admin" && <AdminView products={products} addProduct={addProduct} deleteProduct={deleteProduct} orders={orders} ordersLoading={ordersLoading} />}
         </>
