@@ -1,7 +1,9 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { ShoppingBag, X, Plus, Minus, Search, Menu, ChevronLeft, ChevronRight, Heart, Check, ChevronDown, Lock, Trash2, Package, Settings } from "lucide-react";
 import { supabase } from "./supabaseClient";
-
+import v1 from "./assets/v1.jfif";
+import v2 from "./assets/v2.jfif";
+import v3 from "./assets/v3.jfif";
 const ADMIN_PASSCODE = "230615"; // غيّريه لأي رمز تحبينه
 
 const FONTS = `
@@ -410,7 +412,9 @@ function ShopView({ products, activeCat, setActiveCat, setView, setSelectedId, a
 
 function ProductView({ product, setView, addToCart }) {
   const [qty, setQty] = useState(1);
-  const [added, setAdded] = useState(false);
+  const [added, setAdded] = useState(false); 
+  const [selectedSize, setSelectedSize] = useState("");
+  const [selectedColor, setSelectedColor] = useState("");
   if (!product) return null;
   return (
     <section className="max-w-6xl mx-auto px-5 md:px-8 py-12">
@@ -432,6 +436,56 @@ function ProductView({ product, setView, addToCart }) {
           <p className="text-sm leading-relaxed mb-8" style={{ color: COLORS.mute, fontFamily: "Jost, sans-serif", fontWeight: 300 }}>
             {product.description}
           </p>
+          <div className="mb-6">
+  <p className="text-sm mb-2">Size</p>
+
+  <div className="flex gap-2 flex-wrap">
+  {(
+  Array.isArray(product.sizes)
+    ? product.sizes
+    : String(product.sizes || "").split(",").map(s => s.trim())
+)
+.sort((a, b) => {
+  const order = ["XS", "S", "M", "L", "XL", "XXL"];
+  return order.indexOf(a.toUpperCase()) - order.indexOf(b.toUpperCase());
+})
+.map((size) => (
+  <button
+    key={size}
+    onClick={() => setSelectedSize(size)}
+    className={`px-4 py-2 border ${
+      selectedSize === size
+        ? "bg-black text-white"
+        : "bg-white"
+    }`}
+  >
+    {size}
+  </button>
+))}
+  </div>
+</div>
+<div className="mb-6">
+  <p className="text-sm mb-2">Color</p>
+
+  <div className="flex gap-3 flex-wrap">
+  {(
+  Array.isArray(product.colors)
+    ? product.colors
+    : String(product.colors || "").split(",").map(c => c.trim())
+).map((color) => (
+      <button
+        key={color}
+        onClick={() => setSelectedColor(color)}
+        className={`w-8 h-8 rounded-full border-2 ${
+          selectedColor === color
+            ? "border-black scale-110"
+            : "border-gray-300"
+        }`}
+        style={{ backgroundColor: color }}
+      />
+    ))}
+  </div>
+</div>
           <div className="flex items-center gap-4 mb-8">
             <div className="flex items-center border" style={{ borderColor: COLORS.taupe }}>
               <button onClick={() => setQty((q) => Math.max(1, q - 1))} className="p-3" aria-label="إنقاص الكمية">
@@ -443,11 +497,16 @@ function ProductView({ product, setView, addToCart }) {
               </button>
             </div>
             <button
-              onClick={() => {
-                addToCart(product.id, qty);
-                setAdded(true);
-                setTimeout(() => setAdded(false), 1800);
-              }}
+             onClick={() => {
+    if (!selectedSize) {
+        alert("Please select a size");
+        return;
+    }
+
+    addToCart(product.id, qty, selectedSize);
+    setAdded(true);
+    setTimeout(() => setAdded(false), 1800);
+}}
               className="flex-1 py-3.5 text-sm tracking-wide flex items-center justify-center gap-2 transition-colors"
               style={{ backgroundColor: added ? "#3d6b4f" : COLORS.ink, color: COLORS.ivory, fontFamily: "Jost, sans-serif" }}
             >
@@ -502,6 +561,14 @@ function CartDrawer({ products, open, onClose, cart, updateQty, removeItem, setV
               <div className="flex-1 flex flex-col justify-between">
                 <div className="flex justify-between gap-2">
                   <p className="text-sm" style={{ fontFamily: "Jost, sans-serif" }}>{i.product.name}</p>
+                  {i.size && (
+  <p
+    className="text-xs mt-1"
+    style={{ color: COLORS.mute, fontFamily: "Jost, sans-serif" }}
+  >
+    Size: {i.size}
+  </p>
+)}
                   <button onClick={() => removeItem(i.id)} aria-label="حذف">
                     <X size={15} color={COLORS.mute} />
                   </button>
@@ -730,9 +797,14 @@ function AboutView() {
         </p>
       </div>
       <div className="grid grid-cols-3">
-        {[1, 2, 3].map((i) => (
-          <img key={i} src={`https://picsum.photos/seed/nooratelier${i}/500/500`} alt="" className="w-full aspect-square object-cover" />
-        ))}
+      {[v1, v2, v3].map((image, i) => (
+  <img
+    key={i}
+    src={image}
+    alt=""
+    className="w-full aspect-square object-cover"
+  />
+))} 
       </div>
       <div className="max-w-2xl mx-auto px-5 md:px-8 py-16">
         <h2 className="text-2xl mb-8 text-center" style={{ fontFamily: "Fraunces, serif" }}>
@@ -880,7 +952,14 @@ function AdminView({ products, addProduct, deleteProduct, orders, ordersLoading 
   const [unlocked, setUnlocked] = useState(false);
   const [code, setCode] = useState("");
   const [tab, setTab] = useState("products");
-  const [form, setForm] = useState({ name: "", price: "", img: "", description: "", cat: "robes" });
+  const [form, setForm] = useState({
+  name: "",
+  price: "",
+  img: "",
+  description: "",
+  sizes: [],
+  colors: []
+});
 
   if (!unlocked) {
     return (
@@ -945,17 +1024,88 @@ function AdminView({ products, addProduct, deleteProduct, orders, ordersLoading 
                 addProduct({
                   name: form.name,
                   price: Number(form.price),
-                  img: form.img || "https://picsum.photos/seed/" + Date.now() + "/600/750",
+                  img: form.img,
                   description: form.description,
-                  cat: form.cat,
+                  sizes: form.sizes.split(",").map((s) => s.trim()),
+                  colors: form.colors.split(",").map((c) => c.trim()),
                 });
-                setForm({ name: "", price: "", img: "", description: "", cat: "robes" });
               }}
             >
               <input required placeholder="اسم المنتج" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full border px-4 py-3 text-sm" style={{ borderColor: COLORS.taupe, fontFamily: "Jost, sans-serif" }} />
               <input required type="number" placeholder="السعر" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className="w-full border px-4 py-3 text-sm" style={{ borderColor: COLORS.taupe, fontFamily: "Jost, sans-serif" }} />
               <input placeholder="رابط الصورة (اختياري)" value={form.img} onChange={(e) => setForm({ ...form, img: e.target.value })} className="w-full border px-4 py-3 text-sm" style={{ borderColor: COLORS.taupe, fontFamily: "Jost, sans-serif" }} />
               <textarea placeholder="الوصف" rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full border px-4 py-3 text-sm" style={{ borderColor: COLORS.taupe, fontFamily: "Jost, sans-serif" }} />
+               <div className="space-y-4">
+
+  <div>
+    <p className="mb-2 font-medium">المقاسات</p>
+
+    {["XS","S","M","L","XL","XXL"].map((size) => (
+      <label key={size} className="mr-4">
+        <input
+          type="checkbox"
+          checked={form.sizes.includes(size)}
+          onChange={(e) => {
+            if (e.target.checked) {
+              setForm({
+                ...form,
+                sizes: [...form.sizes, size],
+              });
+            } else {
+              setForm({
+                ...form,
+                sizes: form.sizes.filter((s) => s !== size),
+              });
+            }
+          }}
+        />
+        <span className="ml-1">{size}</span>
+      </label>
+    ))}
+  </div>
+<div className="mt-4">
+  <p className="mb-2 font-medium">الألوان</p>
+
+  <div className="flex flex-wrap gap-3">
+    {[
+      { name: "Black", color: "#000" },
+      { name: "White", color: "#fff" },
+      { name: "Brown", color: "#8B4513" },
+      { name: "Beige", color: "#F5F5DC" },
+      { name: "Gray", color: "#808080" },
+      { name: "Blue", color: "#2563eb" },
+    ].map((item) => (
+      <button
+        type="button"
+        key={item.name}
+        onClick={() => {
+          if (form.colors.includes(item.name)) {
+            setForm({
+              ...form,
+              colors: form.colors.filter((c) => c !== item.name),
+            });
+          } else {
+            setForm({
+              ...form,
+              colors: [...form.colors, item.name],
+            });
+          }
+        }}
+        style={{
+          width: 30,
+          height: 30,
+          borderRadius: "50%",
+          background: item.color,
+          border: form.colors.includes(item.name)
+            ? "3px solid #b08d57"
+            : "1px solid #ccc",
+        }}
+      />
+    ))}
+  </div>
+</div>
+</div>
+
               <button type="submit" className="flex items-center justify-center gap-2 w-full py-3 text-sm" style={{ backgroundColor: COLORS.ink, color: COLORS.ivory, fontFamily: "Jost, sans-serif" }}>
                 <Plus size={15} /> إضافة
               </button>
@@ -1057,15 +1207,26 @@ export default function App() {
     if (view === "admin") loadOrders();
   }, [view]);
 
-  const addToCart = (id, qty = 1) => {
-    setCart((prev) => {
-      const existing = prev.find((c) => c.id === id);
-      if (existing) return prev.map((c) => (c.id === id ? { ...c, qty: c.qty + qty } : c));
-      return [...prev, { id, qty }];
-    });
-    setCartOpen(true);
-  };
-  const updateQty = (id, qty) => {
+const addToCart = (id, qty = 1, size = null) => {
+  setCart((prev) => {
+    const existing = prev.find(
+  (c) => c.id === id && c.size === size
+);
+
+    if (existing) {
+      return prev.map((c) =>
+        c.id === id && c.size === size
+          ? { ...c, qty: c.qty + qty }
+          : c
+      );
+    }
+
+    return [...prev, { id, qty, size }];
+  });
+
+  setCartOpen(true);
+};
+  const updateQty = (id, qty, size = null) => {
     if (qty < 1) return;
     setCart((prev) => prev.map((c) => (c.id === id ? { ...c, qty } : c)));
   };
