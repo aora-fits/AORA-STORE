@@ -320,7 +320,7 @@ function Footer({ setView }) {
 }}
     target="_blank"
     rel="noopener noreferrer"
-    className="text-base hover:opacity-70 transition"
+    className="text-sm hover:opacity-70 transition"
     style={{ color: COLORS.bronze }}
   >
     {col.title === "Follow Us" ? (
