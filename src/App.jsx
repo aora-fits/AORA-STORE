@@ -100,7 +100,7 @@ function Logo({ size = "text-2xl" , dark }) {
 function TopBar({ view, setView, cartCount, setCartOpen, menuOpen, setMenuOpen }) {
   const nav = [
     { id: "home", label: "Home" },
-    { id: "shop", label: "Collection" },
+    { id: " shop", label: "Collection" },
     { id: "about", label: "About" },
     { id: "contact", label: "Contact" },
   ];
@@ -266,7 +266,6 @@ function Footer({ setView }) {
           </p>
         </div>
         {[
-          { title: "Shop", items:[ "Dresses"] },
           { title: " Costumer Care", items: ["Shipping & Delivery", "Returns & Exchanges", "FAQ", "Contact Us"] },
           { title: "Follow Us", items: ["Instagram", "Facebook", "TikTok"] },
         ].map((col) => (
@@ -276,9 +275,23 @@ function Footer({ setView }) {
             </p>
             <ul className="space-y-2">
               {col.items.map((it) => (
-                <li key={it} className="text-sm" style={{ color: COLORS.taupe, fontFamily: "Jost, sans-serif", fontWeight: 300 }}>
-                  {it}
-                </li>
+                <li key={it}>
+  <a
+    href={
+      it === "Instagram"
+        ? "https://instagram.com/eabdou.bch"
+        : it === "Facebook"
+        ? "https://facebook.com/اسم_صفحتك"
+        : "https://tiktok.com/@اسم_حسابك"
+    }
+    target="_blank"
+    rel="noopener noreferrer"
+    className="text-sm"
+    style={{ color: COLORS.taupe, fontFamily: "Jost, sans-serif" }}
+  >
+    {it}
+  </a>
+</li>
               ))}
             </ul>
           </div>
@@ -286,8 +299,6 @@ function Footer({ setView }) {
       </div>
       <div className="max-w-6xl mx-auto pt-6 border-t flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-center" style={{ borderColor: "#3a352f", color: COLORS.mute, fontFamily: "Jost, sans-serif" }}>
         <span>© 2026 AORA  .All rights reserved.made by <eabdou className="bch"></eabdou></span>
-        <button onClick={() => setView("admin")} className="underline opacity-70 hover:opacity-100">
-          لوحة تحكم المتجر
         </button>
       </div>
     </footer>
@@ -316,10 +327,10 @@ function ShopView({ products, activeCat, setActiveCat, setView, setSelectedId, a
   return (
     <section className="max-w-6xl mx-auto px-5 md:px-8 py-14">
       <h1 className="text-3xl md:text-4xl mb-8" style={{ textAlign: "center", fontFamily: "Fraunces, serif", color: COLORS.ink }}>
-        shop
+        Maison Aora
       </h1>
-      <div className="flex gap-3 overflow-x-auto pb-6 mb-6 border-b" style={{ borderColor: COLORS.taupe }}>
-        {[{ id: "all", label: "all" }, ...CATEGORIES].map((c) => (
+      <div className="flex justify-center gap-3 overflow-x-auto pb-6 mb-6 border-b" style={{ borderColor: COLORS.taupe }}>
+        {[{ id: "shop", label: "shop" }, ...CATEGORIES].map((c) => (
           <button
             key={c.id}
             onClick={() => setActiveCat(c.id)}

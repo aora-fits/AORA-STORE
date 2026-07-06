@@ -1,0 +1,58 @@
+# Query: shop
+# ContextLines: 1
+
+17 results - 1 file
+
+src\App.jsx:
+    1  import React, { useState, useMemo, useEffect } from "react";
+    2: import { ShoppingBag, X, Plus, Minus, Search, Menu, ChevronLeft, ChevronRight, Heart, Check, ChevronDown, Lock, Trash2, Package, Settings } from "lucide-react";
+    3  import { supabase } from "./supabaseClient";
+
+  102      { id: "home", label: "Home" },
+  103:     { id: " shop", label: "Collection" },
+  104      { id: "about", label: "About" },
+
+  133            <button onClick={() => setCartOpen(true)} className="relative" aria-label="السلة">
+  134:             <ShoppingBag size={22} color={COLORS.ink} />
+  135              {cartCount > 0 && (
+
+  178            <button
+  179:             onClick={() => setView("shop")}
+  180              className="px-8 py-3.5 text-sm tracking-wide transition-transform hover:-translate-y-0.5"
+
+  268          {[
+  270            { title: " Costumer Care", items: ["Shipping & Delivery", "Returns & Exchanges", "FAQ", "Contact Us"] },
+
+  315        <Banner />
+  316:       <ShopView
+  317          products={products}
+
+  327  
+  328: function ShopView({ products, activeCat, setActiveCat, setView, setSelectedId, addToCart }) {
+  329    const filtered = useMemo(() => (activeCat === "all" ? products : products.filter((p) => p.cat === activeCat)), [activeCat, products]);
+
+  335        <div className="flex justify-center gap-3 overflow-x-auto pb-6 mb-6 border-b" style={{ borderColor: COLORS.taupe }}>
+  336:         {[{ id: "shop", label: "shop" }, ...CATEGORIES].map((c) => (
+  337            <button
+
+  372      <section className="max-w-6xl mx-auto px-5 md:px-8 py-12">
+  373:       <button onClick={() => setView("shop")} className="text-sm flex items-center gap-1 mb-8" style={{ color: COLORS.mute, fontFamily: "Jost, sans-serif" }}>
+  374:         <ChevronRight size={16} /> Return to Shop
+  375        </button>
+
+  443          <div className="flex items-center justify-between px-6 py-5 border-b" style={{ borderColor: COLORS.taupe }}>
+  444:           <h2 className="text-lg" style={{ fontFamily: "Fraunces, serif" }}>Your Shopping Bag</h2>
+  445            <button onClick={onClose} aria-label="Close">
+
+  518          <p className="text-lg mb-6" style={{ fontFamily: "Fraunces, serif" }}>Your Bag is currently empty</p>
+  519:         <button onClick={() => setView("shop")} className="px-6 py-3 text-sm" style={{ backgroundColor: COLORS.ink, color: COLORS.ivory, fontFamily: "Jost, sans-serif" }}>
+  520:           Return to Shop
+  521          </button>
+
+  679          <h1 className="text-3xl md:text-4xl mb-6" style={{ fontFamily: "Fraunces, serif", color: COLORS.ink }}>
+  680:           Every Great Story Begins Somewhere—Ours Began in a Small Workshop 
+  681          </h1>
+
+  859            {view === "home" && <HomeView products={products} setView={setView} setActiveCat={setActiveCat} setSelectedId={setSelectedId} addToCart={addToCart} />}
+  860:           {view === "shop" && <ShopView products={products} activeCat={activeCat} setActiveCat={setActiveCat} setView={setView} setSelectedId={setSelectedId} addToCart={addToCart} />}
+  861            {view === "product" && <ProductView product={selectedProduct} setView={setView} addToCart={addToCart} />}
