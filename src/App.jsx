@@ -91,9 +91,16 @@ function formatPrice(n) {
 
 function Logo({ size = "text-2xl", dark }) {
   return (
-    <div className={`${size} tracking-[0.15em]`} style={{ fontFamily: "Fraunces, serif", color: dark ? COLORS.ink : COLORS.bronze }}>
-      AO <span style={{ color: COLORS.bronze }}>RA</span>
-    </div>
+<div
+  className={`${size} whitespace-nowrap`}
+  style={{
+    fontFamily: "Fraunces, serif",
+    letterSpacing: "0.08em",
+    color: COLORS.bronze,
+  }}
+>
+  AORA
+</div>
   );
 }
 
@@ -313,7 +320,7 @@ function Footer({ setView }) {
 }}
     target="_blank"
     rel="noopener noreferrer"
-    className="text-3xl hover:opacity-70 transition"
+    className="text-base hover:opacity-70 transition"
     style={{ color: COLORS.bronze }}
   >
     {col.title === "Follow Us" ? (
@@ -335,7 +342,7 @@ function Footer({ setView }) {
         ))}
       </div>
       <div className="max-w-6xl mx-auto pt-6 border-t flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-center" style={{ borderColor: "#3a352f", color: COLORS.mute, fontFamily: "Jost, sans-serif" }}>
-        <span>© 2026 AORA. All rights reserved. Made by Abdou</span>
+        <span>© 2026 AORA. All rights reserved. Made by ABDERRAZAK BACHIR</span>
         <button onClick={() => setView("admin")} className="underline opacity-70 hover:opacity-100">
           لوحة تحكم المتجر
         </button>
