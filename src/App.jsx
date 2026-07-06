@@ -173,7 +173,7 @@ function Hero({ setView }) {
   return (
     <section className="relative overflow-hidden" style={{ backgroundColor: COLORS.ink }}>
       <div className="max-w-6xl mx-auto px-5 md:px-8 py-24 md:py-36 grid md:grid-cols-2 gap-10 items-center">
-        <div>
+        <div className="text-center md:text-left">
           <h1 className="text-4xl md:text-6xl leading-tight mb-6" style={{ fontFamily: "Fraunces, serif", color: COLORS.ivory }}>
             Crafted For You <br />
           </h1>
