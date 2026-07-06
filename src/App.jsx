@@ -258,7 +258,7 @@ function Banner() {
 function Footer({ setView }) {
   return (
     <footer className="pt-16 pb-8 px-5 md:px-8" style={{ backgroundColor: COLORS.ink }}>
-      <div className="max-w-6xl mx-auto grid md:grid-cols-4 gap-10 mb-12">
+      <div className="max-w-6xl mx-auto flex flex-col items-center text-center gap-12 mb-12">
         <div>
           <Logo size="text-xl" dark />
           <p className="text-sm mt-4 leading-relaxed" style={{ color: COLORS.mute, fontFamily: "Jost, sans-serif", fontWeight: 300 }}>
@@ -269,7 +269,7 @@ function Footer({ setView }) {
           { title: "Customer Care", items: ["Shipping & Delivery", "Returns & Exchanges", "FAQ", "Contact Us"] },
           { title: "Follow Us", items: ["Instagram", "Facebook", "TikTok"] },
         ].map((col) => (
-          <div key={col.title}>
+          <div key={col.title} className="w-full flex flex-col items-center">
             {col.title === "Customer Care" ? (
               <button
                 onClick={() => setView("customer-care")}
@@ -283,41 +283,52 @@ function Footer({ setView }) {
                 {col.title}
               </p>
             )}
-            <ul className="space-y-2">
+            <ul className="flex justify-center gap-6 mt-4">
               {col.items.map((it) => (
                 <li key={it}>
-                  <a
-                    href={
-                      it === "Instagram"
-                        ? "https://instagram.com/eabdou.bch"
-                        : it === "Facebook"
-                        ? "https://facebook.com/اسم_صفحتك"
-                        : it === "TikTok"
-                        ? "https://tiktok.com/@اسم_حسابك"
-                        : "#"
-                    }
-                    onClick={(e) => {
-                      if (it === "Shipping & Delivery") {
-                        e.preventDefault();
-                        setView("shipping");
-                      } else if (it === "Returns & Exchanges") {
-                        e.preventDefault();
-                        setView("returns");
-                      } else if (it === "FAQ") {
-                        e.preventDefault();
-                        setView("faq");
-                      } else if (it === "Contact Us") {
-                        e.preventDefault();
-                        setView("contact");
-                      }
-                    }}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm"
-                  >
-                    {it}
-                  </a>
-                </li>
+  <a
+  href={
+  col.title === "Follow Us"
+    ? it === "Instagram"
+      ? "https://instagram.com/eabdou.bch"
+      : it === "Facebook"
+      ? "https://facebook.com/..."
+      : "https://tiktok.com/@..."
+    : "#"
+}
+    onClick={(e) => {
+  if (col.title !== "Follow Us") {
+    e.preventDefault();
+
+    if (it === "Shipping & Delivery") {
+      setView("shipping");
+    } else if (it === "Returns & Exchanges") {
+      setView("returns");
+    } else if (it === "FAQ") {
+      setView("faq");
+    } else if (it === "Contact Us") {
+      setView("contact");
+    }
+  }
+}}
+    target="_blank"
+    rel="noopener noreferrer"
+    className="text-3xl hover:opacity-70 transition"
+    style={{ color: COLORS.bronze }}
+  >
+    {col.title === "Follow Us" ? (
+  it === "Instagram" ? (
+    <i className="fab fa-instagram"></i>
+  ) : it === "Facebook" ? (
+    <i className="fab fa-facebook-f"></i>
+  ) : (
+    <i className="fab fa-tiktok"></i>
+  )
+) : (
+  it
+)}
+  </a>
+</li>
               ))}
             </ul>
           </div>
