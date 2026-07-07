@@ -804,7 +804,6 @@ onChange={(e) =>
   
   pattern="[0-9]{10}"
   maxLength={10}
-  required
   className="border px-4 py-3 text-sm bg-white"
   style={{ borderColor: COLORS.taupe, fontFamily: "Jost, sans-serif" }}
 />
@@ -1319,6 +1318,12 @@ function AppContent() {
   const location = useLocation();
   const setView = useGoTo();
   const view = pathToView(location.pathname);
+  useEffect(() => {
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth",
+  });
+}, [location.pathname]);
 
   const [activeCat, setActiveCat] = useState("all");
   const [cart, setCart] = useState([]);
