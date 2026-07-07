@@ -99,6 +99,16 @@ function formatPrice(n) {
   return n.toLocaleString("ar-DZ") + " د.ج";
 }
 
+// يحوّل اسم المنتج إلى رابط (slug) صالح للاستخدام في الـ URL
+// يدعم الحروف العربية والإنجليزية، ويستبدل المسافات والرموز بشرطة "-"
+function slugify(str) {
+  return String(str || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 // ---------- Routing helpers ----------
 // خريطة تربط كل "صفحة" برابط (URL) حقيقي خاص فيها
 const ROUTE_MAP = {
@@ -249,7 +259,7 @@ function ProductCard({ p, setView, addToCart }) {
   return (
     <div className="group">
       <button
-        onClick={() => setView("product", p.id)}
+        onClick={() => setView("product", slugify(p.name))}
         className="block w-full relative overflow-hidden mb-3"
         style={{ aspectRatio: "4/5" }}
       >
@@ -264,7 +274,7 @@ function ProductCard({ p, setView, addToCart }) {
       <div className="flex items-start justify-between gap-2">
         <div>
           <button
-            onClick={() => setView("product", p.id)}
+            onClick={() => setView("product", slugify(p.name))}
             className="text-sm text-right"
             style={{ fontFamily: "Jost, sans-serif", color: COLORS.ink }}
           >
@@ -549,7 +559,7 @@ function ProductView({ product, setView, addToCart }) {
         return;
     }
 
-    addToCart(product.id, qty, selectedSize);
+    addToCart(product.id, qty, selectedSize, selectedColor);
     setAdded(true);
     setTimeout(() => setAdded(false), 1800);
 }}
@@ -575,10 +585,13 @@ function ProductView({ product, setView, addToCart }) {
   );
 }
 
-// Route wrapper: يقرأ id المنتج من الرابط (URL) مباشرة
+// Route wrapper: يقرأ اسم المنتج (على شكل slug) من الرابط (URL) مباشرة
+// مثال: /product/فستان-الصيف
 function ProductRoute({ products, addToCart, setView }) {
-  const { id } = useParams();
-  const product = products.find((p) => String(p.id) === String(id));
+  const { id: slug } = useParams();
+  const product =
+    products.find((p) => slugify(p.name) === slug) ||
+    products.find((p) => String(p.id) === String(slug)); // احتياط للروابط القديمة بالأرقام
   return <ProductView product={product} setView={setView} addToCart={addToCart} />;
 }
 
@@ -609,30 +622,34 @@ function CartDrawer({ products, open, onClose, cart, updateQty, removeItem, setV
             </p>
           )}
           {items.map((i) => (
-            <div key={`${i.id}-${i.size ?? "nosize"}`} className="flex gap-4 py-4 border-b" style={{ borderColor: COLORS.taupe }}>
+            <div key={`${i.id}-${i.size ?? "nosize"}-${i.color ?? "nocolor"}`} className="flex gap-4 py-4 border-b" style={{ borderColor: COLORS.taupe }}>
               <img src={i.product.img} alt="" className="w-20 h-24 object-cover shrink-0" />
               <div className="flex-1 flex flex-col justify-between">
                 <div className="flex justify-between gap-2">
                   <p className="text-sm" style={{ fontFamily: "Jost, sans-serif" }}>{i.product.name}</p>
-                  {i.size && (
-  <p
-    className="text-xs mt-1"
-    style={{ color: COLORS.mute, fontFamily: "Jost, sans-serif" }}
-  >
-    Size: {i.size}
-  </p>
-)}
-                  <button onClick={() => removeItem(i.id, i.size)} aria-label="حذف">
+                  <div className="text-xs mt-1 text-right" style={{ color: COLORS.mute, fontFamily: "Jost, sans-serif" }}>
+                    {i.size && <p>Size: {i.size}</p>}
+                    {i.color && (
+                      <p className="flex items-center gap-1.5 justify-end mt-0.5">
+                        Color:
+                        <span
+                          className="inline-block w-3.5 h-3.5 rounded-full border"
+                          style={{ backgroundColor: i.color, borderColor: COLORS.taupe }}
+                        />
+                      </p>
+                    )}
+                  </div>
+                  <button onClick={() => removeItem(i.id, i.size, i.color)} aria-label="حذف">
                     <X size={15} color={COLORS.mute} />
                   </button>
                 </div>
                 <p className="text-xs" style={{ color: COLORS.bronze, fontFamily: "Jost, sans-serif" }}>{formatPrice(i.product.price)}</p>
                 <div className="flex items-center border w-fit" style={{ borderColor: COLORS.taupe }}>
-                  <button onClick={() => updateQty(i.id, i.qty - 1, i.size)} className="px-2 py-1">
+                  <button onClick={() => updateQty(i.id, i.qty - 1, i.size, i.color)} className="px-2 py-1">
                     <Minus size={12} />
                   </button>
                   <span className="px-3 text-xs">{i.qty}</span>
-                  <button onClick={() => updateQty(i.id, i.qty + 1, i.size)} className="px-2 py-1">
+                  <button onClick={() => updateQty(i.id, i.qty + 1, i.size, i.color)} className="px-2 py-1">
                     <Plus size={12} />
                   </button>
                 </div>
@@ -725,7 +742,7 @@ function CheckoutView({ products, cart, setView, clearCart, recordOrder }) {
             customer: form,
             delivery_type: deliveryType,
             shipping_fee: shippingFee,
-            items: items.map((i) => ({ name: i.product.name, qty: i.qty, price: i.product.price })),
+            items: items.map((i) => ({ name: i.product.name, qty: i.qty, price: i.product.price, size: i.size, color: i.color })),
             subtotal,
             total,
           });
@@ -810,7 +827,7 @@ function CheckoutView({ products, cart, setView, clearCart, recordOrder }) {
         <h2 className="text-lg mb-4" style={{ fontFamily: "Fraunces, serif" }}>ملخص الطلب</h2>
         <div className="space-y-4">
           {items.map((i) => (
-            <div key={`${i.id}-${i.size ?? "nosize"}`} className="flex gap-3 text-sm" style={{ fontFamily: "Jost, sans-serif" }}>
+            <div key={`${i.id}-${i.size ?? "nosize"}-${i.color ?? "nocolor"}`} className="flex gap-3 text-sm" style={{ fontFamily: "Jost, sans-serif" }}>
               <img src={i.product.img} className="w-14 h-16 object-cover" alt="" />
               <div className="flex-1">
                 <p>{i.product.name}</p>
@@ -1298,25 +1315,25 @@ function AppContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view]);
 
-  const addToCart = (id, qty = 1, size = null) => {
+  const addToCart = (id, qty = 1, size = null, color = null) => {
     setCart((prev) => {
-      const existing = prev.find((c) => c.id === id && c.size === size);
+      const existing = prev.find((c) => c.id === id && c.size === size && c.color === color);
       if (existing) {
-        return prev.map((c) => (c.id === id && c.size === size ? { ...c, qty: c.qty + qty } : c));
+        return prev.map((c) => (c.id === id && c.size === size && c.color === color ? { ...c, qty: c.qty + qty } : c));
       }
-      return [...prev, { id, qty, size }];
+      return [...prev, { id, qty, size, color }];
     });
     setCartOpen(true);
   };
 
-  // ⚠️ إصلاح: قبل كانت هذه الدوال تتجاهل المقاس (size) فتؤثر على كل نسخ
-  // المنتج بنفس id بغض النظر عن المقاس. الآن تتحقق من id و size معًا.
-  const updateQty = (id, qty, size = null) => {
+  // ⚠️ إصلاح: قبل كانت هذه الدوال تتجاهل المقاس واللون فتؤثر على كل نسخ
+  // المنتج بنفس id بغض النظر عن المقاس/اللون. الآن تتحقق من الثلاثة معًا.
+  const updateQty = (id, qty, size = null, color = null) => {
     if (qty < 1) return;
-    setCart((prev) => prev.map((c) => (c.id === id && c.size === size ? { ...c, qty } : c)));
+    setCart((prev) => prev.map((c) => (c.id === id && c.size === size && c.color === color ? { ...c, qty } : c)));
   };
-  const removeItem = (id, size = null) => {
-    setCart((prev) => prev.filter((c) => !(c.id === id && c.size === size)));
+  const removeItem = (id, size = null, color = null) => {
+    setCart((prev) => prev.filter((c) => !(c.id === id && c.size === size && c.color === color)));
   };
   const clearCart = () => setCart([]);
   const cartCount = cart.reduce((s, c) => s + c.qty, 0);
