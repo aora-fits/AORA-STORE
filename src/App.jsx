@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useEffect } from "react";
-import { ShoppingBag, X, Plus, Minus, Search, Menu, ChevronLeft, ChevronRight, Heart, Check, ChevronDown, Lock, Trash2, Package, Settings } from "lucide-react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
+import { ShoppingBag, X, Plus, Minus, Search, Menu, ChevronLeft, ChevronRight, Heart, Check, ChevronDown, Lock, Trash2, Package, Settings, Phone, Upload, Image as ImageIcon } from "lucide-react";
 import { supabase } from "./supabaseClient";
 import { BrowserRouter, Routes, Route, useNavigate, useLocation, useParams } from "react-router-dom";
 import v1 from "./assets/v1.jfif";
@@ -13,6 +13,10 @@ import v3 from "./assets/v3.jfif";
 // جداول products و orders إلا من مستخدم مصرّح له. هذا الرمز هنا هو فقط
 // طبقة حماية بسيطة تمنع "التصفح العرضي" وليس حماية أمنية حقيقية.
 const ADMIN_PASSCODE = "230615"; // غيّريه لأي رمز تحبينه
+
+// رقم الهاتف الموحّد للاتصال المباشر من "اتصل بنا"
+const CONTACT_PHONE = "0662617442"; // بدون مسافات، للاستخدام في رابط tel:
+const CONTACT_PHONE_DISPLAY = "06 62 61 74 42"; // للعرض فقط
 
 const FONTS = `
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,450;0,9..144,600;1,9..144,450&family=Jost:wght@300;400;500;600&display=swap');
@@ -32,6 +36,15 @@ const CATEGORIES = [
 ];
 
 const DEFAULT_PRODUCTS = [
+];
+
+// حالات الطلبية الممكنة
+const ORDER_STATUSES = [
+  { id: "pending", label: "قيد الانتظار", color: "#A47B3D" },
+  { id: "confirmed", label: "مؤكدة", color: "#3d6b4f" },
+  { id: "shipped", label: "قيد التوصيل", color: "#2563eb" },
+  { id: "delivered", label: "تم التسليم", color: "#15803d" },
+  { id: "cancelled", label: "ملغاة", color: "#5B2A32" },
 ];
 
 const WILAYAS = [
@@ -342,10 +355,12 @@ function Footer({ setView }) {
       : it === "Facebook"
       ? "https://facebook.com/..."
       : "https://tiktok.com/@..."
+    : it === "Contact Us"
+    ? `tel:${CONTACT_PHONE}`
     : "#"
 }
     onClick={(e) => {
-  if (col.title !== "Follow Us") {
+  if (col.title !== "Follow Us" && it !== "Contact Us") {
     e.preventDefault();
 
     if (it === "Shipping & Delivery") {
@@ -354,13 +369,11 @@ function Footer({ setView }) {
       setView("returns");
     } else if (it === "FAQ") {
       setView("faq");
-    } else if (it === "Contact Us") {
-      setView("contact");
     }
   }
 }}
-    target="_blank"
-    rel="noopener noreferrer"
+    target={col.title === "Follow Us" ? "_blank" : undefined}
+    rel={col.title === "Follow Us" ? "noopener noreferrer" : undefined}
     className="text-sm hover:opacity-70 transition"
     style={{ color: COLORS.bronze }}
   >
@@ -704,7 +717,7 @@ function CartDrawer({ products, open, onClose, cart, updateQty, removeItem, setV
 
 function CheckoutView({ products, cart, setView, clearCart, recordOrder }) {
   const [step, setStep] = useState("form");
-  const [form, setForm] = useState({ name: "", phone: "", wilaya: "", address: "" });
+  const [form, setForm] = useState({ name: "", phone: "", wilaya: "", commune: "", address: "" });
   const [deliveryType, setDeliveryType] = useState("domicile");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -720,8 +733,33 @@ function CheckoutView({ products, cart, setView, clearCart, recordOrder }) {
   const selectedWilaya = WILAYAS.find((w) => w.name === form.wilaya);
   const domicileAvailable = selectedWilaya ? selectedWilaya.domicile > 0 : true;
   const stopdeskAvailable = selectedWilaya ? selectedWilaya.stopdesk > 0 : true;
-  const shippingFee = selectedWilaya ? (deliveryType === "domicile" ? selectedWilaya.domicile : selectedWilaya.stopdesk) : 0;
+
+  // ✅ إصلاح: لو نوع التوصيل المختار غير متاح في الولاية الحالية (مثلاً stopdesk = 0)،
+  // نستعمل النوع المتاح فعليًا في حساب الرسوم بدل الاعتماد على deliveryType القديم،
+  // اللي كان يخلي التوصيل يصير 0 د.ج بالخطأ.
+  const effectiveDeliveryType =
+    deliveryType === "domicile" && !domicileAvailable && stopdeskAvailable
+      ? "stopdesk"
+      : deliveryType === "stopdesk" && !stopdeskAvailable && domicileAvailable
+      ? "domicile"
+      : deliveryType;
+
+  const shippingFee = selectedWilaya
+    ? (effectiveDeliveryType === "domicile" ? selectedWilaya.domicile : selectedWilaya.stopdesk)
+    : 0;
   const total = subtotal + shippingFee;
+
+  // ✅ إصلاح: نزامن الراديو المعروض في الواجهة مع effectiveDeliveryType،
+  // حتى ما يبقاش الخيار المحدد بصريًا مختلف عن الخيار المستعمل في الحساب.
+  useEffect(() => {
+    if (!selectedWilaya) return;
+    if (deliveryType === "domicile" && !domicileAvailable && stopdeskAvailable) {
+      setDeliveryType("stopdesk");
+    } else if (deliveryType === "stopdesk" && !stopdeskAvailable && domicileAvailable) {
+      setDeliveryType("domicile");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.wilaya]);
 
   if (items.length === 0 && step === "form") {
     return (
@@ -768,11 +806,12 @@ function CheckoutView({ products, cart, setView, clearCart, recordOrder }) {
             id: Date.now(),
             date: new Date().toISOString(),
             customer: form,
-            delivery_type: deliveryType,
+            delivery_type: effectiveDeliveryType,
             shipping_fee: shippingFee,
             items: items.map((i) => ({ name: i.product.name, qty: i.qty, price: i.product.price, size: i.size, color: i.color })),
             subtotal,
             total,
+            status: "pending",
           });
           setSubmitting(false);
           if (ok) {
@@ -821,6 +860,14 @@ onChange={(e) =>
               </option>
             ))}
           </select>
+          <input
+            required
+            placeholder="البلدية"
+            value={form.commune}
+            onChange={(e) => setForm({ ...form, commune: e.target.value })}
+            className="border px-4 py-3 text-sm bg-white"
+            style={{ borderColor: COLORS.taupe, fontFamily: "Jost, sans-serif" }}
+          />
           <input required placeholder="العنوان الكامل" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="border px-4 py-3 text-sm col-span-2" style={{ borderColor: COLORS.taupe, fontFamily: "Jost, sans-serif" }} />
         </div>
 
@@ -833,7 +880,7 @@ onChange={(e) =>
                 style={{ borderColor: COLORS.taupe, opacity: domicileAvailable ? 1 : 0.4, cursor: domicileAvailable ? "pointer" : "not-allowed" }}
               >
                 <span className="flex items-center gap-3">
-                  <input type="radio" name="delivery" checked={deliveryType === "domicile"} disabled={!domicileAvailable} onChange={() => setDeliveryType("domicile")} />
+                  <input type="radio" name="delivery" checked={effectiveDeliveryType === "domicile"} disabled={!domicileAvailable} onChange={() => setDeliveryType("domicile")} />
                   التوصيل إلى المنزل
                 </span>
                 <span style={{ color: COLORS.bronze }}>{domicileAvailable ? formatPrice(selectedWilaya.domicile) : "غير متوفر"}</span>
@@ -843,7 +890,7 @@ onChange={(e) =>
                 style={{ borderColor: COLORS.taupe, opacity: stopdeskAvailable ? 1 : 0.4, cursor: stopdeskAvailable ? "pointer" : "not-allowed" }}
               >
                 <span className="flex items-center gap-3">
-                  <input type="radio" name="delivery" checked={deliveryType === "stopdesk"} disabled={!stopdeskAvailable} onChange={() => setDeliveryType("stopdesk")} />
+                  <input type="radio" name="delivery" checked={effectiveDeliveryType === "stopdesk"} disabled={!stopdeskAvailable} onChange={() => setDeliveryType("stopdesk")} />
                   الاستلام من مكتب التوصيل
                 </span>
                 <span style={{ color: COLORS.bronze }}>{stopdeskAvailable ? formatPrice(selectedWilaya.stopdesk) : "غير متوفر"}</span>
@@ -1027,58 +1074,37 @@ function CustomerCareView() {
 }
 
 function ContactView() {
-  const [sent, setSent] = useState(false);
   return (
-    <section className="max-w-2xl mx-auto px-5 md:px-8 py-16">
-      <h1 className="text-3xl mb-3 text-center" style={{ fontFamily: "Fraunces, serif" }}>Contact us</h1>
-      <p className="text-sm text-center mb-10" style={{ color: COLORS.mute, fontFamily: "Jost, sans-serif" }}>
-        We are happy to answer your questions within one business day.
+    <section className="max-w-md mx-auto px-5 md:px-8 py-24 text-center">
+      <h1 className="text-3xl mb-3" style={{ fontFamily: "Fraunces, serif" }}>Contact us</h1>
+      <p className="text-sm mb-10" style={{ color: COLORS.mute, fontFamily: "Jost, sans-serif" }}>
+        نسعد بالرد على استفساراتكم مباشرة عبر الهاتف
       </p>
-      {sent ? (
-        <div className="text-center py-10">
-          <Check size={28} color={COLORS.bronze} className="mx-auto mb-4" />
-          <p style={{ fontFamily: "Jost, sans-serif" }}>تم إرسال رسالتك بنجاح.</p>
-        </div>
-      ) : (
-        <form
-          className="space-y-4"
-          onSubmit={(e) => {
-            e.preventDefault();
-            setSent(true);
-          }}
-        >
-          <input required placeholder="الاسم" className="w-full border px-4 py-3 text-sm" style={{ borderColor: COLORS.taupe, fontFamily: "Jost, sans-serif" }} />
-          <input required type="email" placeholder="البريد الإلكتروني" className="w-full border px-4 py-3 text-sm" style={{ borderColor: COLORS.taupe, fontFamily: "Jost, sans-serif" }} />
-          <textarea required placeholder="رسالتك" rows={5} className="w-full border px-4 py-3 text-sm" style={{ borderColor: COLORS.taupe, fontFamily: "Jost, sans-serif" }} />
-          <button type="submit" className="px-8 py-3.5 text-sm tracking-wide" style={{ backgroundColor: COLORS.ink, color: COLORS.ivory, fontFamily: "Jost, sans-serif" }}>
-            إرسال
-          </button>
-        </form>
-      )}
-      <div className="grid grid-cols-3 gap-4 mt-16 text-center text-sm" style={{ fontFamily: "Jost, sans-serif", color: COLORS.mute }}>
-        <div>
-          <p className="text-xs mb-1" style={{ color: COLORS.bronze }}>الهاتف</p>
-          <p dir="ltr">0555 12 34 56</p>
-        </div>
-        <div>
-          <p className="text-xs mb-1" style={{ color: COLORS.bronze }}>البريد</p>
-          <p>contact@ateliernoor.dz</p>
-        </div>
-        <div>
-          <p className="text-xs mb-1" style={{ color: COLORS.bronze }}>الفرع</p>
-          <p>الجزائر العاصمة</p>
-        </div>
-      </div>
+      <a
+        href={`tel:${CONTACT_PHONE}`}
+        className="inline-flex items-center gap-3 px-8 py-4 text-lg tracking-wide"
+        style={{ backgroundColor: COLORS.ink, color: COLORS.ivory, fontFamily: "Jost, sans-serif" }}
+      >
+        <Phone size={20} />
+        <span dir="ltr">{CONTACT_PHONE_DISPLAY}</span>
+      </a>
+      <p className="text-xs mt-4" style={{ color: COLORS.mute, fontFamily: "Jost, sans-serif" }}>
+        اضغطي على الرقم للاتصال بنا مباشرة
+      </p>
     </section>
   );
 }
 
-function AdminView({ products, addProduct, deleteProduct, orders, ordersLoading }) {
+function AdminView({ products, addProduct, deleteProduct, orders, ordersLoading, updateOrderStatus, deleteOrder }) {
   const [unlocked, setUnlocked] = useState(false);
   const [code, setCode] = useState("");
   const [tab, setTab] = useState("products");
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [imgPreview, setImgPreview] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const fileInputRef = useRef(null);
   const emptyForm = {
     name: "",
     price: "",
@@ -1088,6 +1114,39 @@ function AdminView({ products, addProduct, deleteProduct, orders, ordersLoading 
     colors: [],
   };
   const [form, setForm] = useState(emptyForm);
+
+  // رفع صورة المنتج مباشرة من الجهاز إلى Supabase Storage
+  // ملاحظة: يجب إنشاء bucket باسم "product-images" في Supabase وجعله public
+  const handleImageUpload = async (file) => {
+    if (!file) return;
+    setUploading(true);
+    setFormError("");
+    try {
+      const ext = file.name.split(".").pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from("product-images")
+        .upload(fileName, file, { cacheControl: "3600", upsert: false });
+      if (uploadError) {
+        // نعرض رسالة الخطأ الحقيقية الجاية من Supabase (غالبًا سببها RLS policy ناقصة على storage.objects)
+        setFormError("تعذر رفع الصورة: " + (uploadError.message || "خطأ غير معروف"));
+        setUploading(false);
+        return;
+      }
+      const { data: publicUrlData } = supabase.storage.from("product-images").getPublicUrl(fileName);
+      const publicUrl = publicUrlData?.publicUrl;
+      if (publicUrl) {
+        setForm((f) => ({ ...f, img: publicUrl }));
+        setImgPreview(publicUrl);
+      }
+    } catch (err) {
+      setFormError("تعذر رفع الصورة: " + String(err?.message || err));
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const filteredOrders = statusFilter === "all" ? orders : orders.filter((o) => (o.status || "pending") === statusFilter);
 
   if (!unlocked) {
     return (
@@ -1169,6 +1228,8 @@ function AdminView({ products, addProduct, deleteProduct, orders, ordersLoading 
                 setSaving(false);
                 if (ok) {
                   setForm(emptyForm);
+                  setImgPreview("");
+                  if (fileInputRef.current) fileInputRef.current.value = "";
                 } else {
                   setFormError("تعذر حفظ المنتج. حاولي مرة أخرى.");
                 }
@@ -1176,7 +1237,36 @@ function AdminView({ products, addProduct, deleteProduct, orders, ordersLoading 
             >
               <input required placeholder="اسم المنتج" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full border px-4 py-3 text-sm" style={{ borderColor: COLORS.taupe, fontFamily: "Jost, sans-serif" }} />
               <input required type="number" placeholder="السعر" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className="w-full border px-4 py-3 text-sm" style={{ borderColor: COLORS.taupe, fontFamily: "Jost, sans-serif" }} />
-              <input placeholder="رابط الصورة (اختياري)" value={form.img} onChange={(e) => setForm({ ...form, img: e.target.value })} className="w-full border px-4 py-3 text-sm" style={{ borderColor: COLORS.taupe, fontFamily: "Jost, sans-serif" }} />
+
+              <div>
+                <p className="text-sm mb-2" style={{ fontFamily: "Jost, sans-serif" }}>صورة المنتج</p>
+                <div className="flex items-center gap-3">
+                  {(imgPreview || form.img) && (
+                    <img src={imgPreview || form.img} alt="" className="w-16 h-16 object-cover border" style={{ borderColor: COLORS.taupe }} />
+                  )}
+                  <label
+                    className="flex items-center gap-2 px-4 py-3 text-sm border cursor-pointer flex-1 justify-center"
+                    style={{ borderColor: COLORS.taupe, fontFamily: "Jost, sans-serif", opacity: uploading ? 0.6 : 1 }}
+                  >
+                    {uploading ? (
+                      "جارٍ الرفع..."
+                    ) : (
+                      <>
+                        <Upload size={15} /> رفع صورة من الجهاز
+                      </>
+                    )}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      disabled={uploading}
+                      onChange={(e) => handleImageUpload(e.target.files?.[0])}
+                    />
+                  </label>
+                </div>
+              </div>
+
               <textarea placeholder="الوصف" rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full border px-4 py-3 text-sm" style={{ borderColor: COLORS.taupe, fontFamily: "Jost, sans-serif" }} />
                <div className="space-y-4">
 
@@ -1249,7 +1339,7 @@ function AdminView({ products, addProduct, deleteProduct, orders, ordersLoading 
 </div>
 </div>
 
-              <button type="submit" disabled={saving} className="flex items-center justify-center gap-2 w-full py-3 text-sm" style={{ backgroundColor: COLORS.ink, color: COLORS.ivory, fontFamily: "Jost, sans-serif", opacity: saving ? 0.6 : 1 }}>
+              <button type="submit" disabled={saving || uploading} className="flex items-center justify-center gap-2 w-full py-3 text-sm" style={{ backgroundColor: COLORS.ink, color: COLORS.ivory, fontFamily: "Jost, sans-serif", opacity: saving || uploading ? 0.6 : 1 }}>
                 <Plus size={15} /> {saving ? "جارٍ الإضافة..." : "إضافة"}
               </button>
             </form>
@@ -1287,25 +1377,104 @@ function AdminView({ products, addProduct, deleteProduct, orders, ordersLoading 
 
       {tab === "orders" && (
         <div>
+          <div className="flex flex-wrap gap-2 mb-6">
+            <button
+              onClick={() => setStatusFilter("all")}
+              className="text-xs px-3 py-2 border"
+              style={{
+                fontFamily: "Jost, sans-serif",
+                borderColor: statusFilter === "all" ? COLORS.ink : COLORS.taupe,
+                backgroundColor: statusFilter === "all" ? COLORS.ink : "transparent",
+                color: statusFilter === "all" ? COLORS.ivory : COLORS.mute,
+              }}
+            >
+              الكل ({orders.length})
+            </button>
+            {ORDER_STATUSES.map((s) => {
+              const count = orders.filter((o) => (o.status || "pending") === s.id).length;
+              return (
+                <button
+                  key={s.id}
+                  onClick={() => setStatusFilter(s.id)}
+                  className="text-xs px-3 py-2 border"
+                  style={{
+                    fontFamily: "Jost, sans-serif",
+                    borderColor: statusFilter === s.id ? s.color : COLORS.taupe,
+                    backgroundColor: statusFilter === s.id ? s.color : "transparent",
+                    color: statusFilter === s.id ? "#fff" : COLORS.mute,
+                  }}
+                >
+                  {s.label} ({count})
+                </button>
+              );
+            })}
+          </div>
+
           {ordersLoading ? (
             <p className="text-sm" style={{ color: COLORS.mute, fontFamily: "Jost, sans-serif" }}>جارٍ تحميل الطلبيات...</p>
-          ) : orders.length === 0 ? (
-            <p className="text-sm" style={{ color: COLORS.mute, fontFamily: "Jost, sans-serif" }}>لا توجد طلبيات بعد</p>
+          ) : filteredOrders.length === 0 ? (
+            <p className="text-sm" style={{ color: COLORS.mute, fontFamily: "Jost, sans-serif" }}>لا توجد طلبيات</p>
           ) : (
             <div className="space-y-4">
-              {orders.map((o) => (
-                <div key={o.id} className="border p-4 text-sm" style={{ borderColor: COLORS.taupe, fontFamily: "Jost, sans-serif" }}>
-                  <div className="flex justify-between mb-2">
-                    <span>{o.customer?.name}</span>
-                    <span style={{ color: COLORS.bronze }}>{formatPrice(o.total)}</span>
+              {filteredOrders.map((o) => {
+                const currentStatus = ORDER_STATUSES.find((s) => s.id === (o.status || "pending")) || ORDER_STATUSES[0];
+                return (
+                  <div key={o.id} className="border p-4 text-sm" style={{ borderColor: COLORS.taupe, fontFamily: "Jost, sans-serif" }}>
+                    <div className="flex justify-between items-start mb-2 gap-2">
+                      <div>
+                        <span>{o.customer?.name}</span>
+                        <span
+                          className="ml-2 text-xs px-2 py-0.5 rounded-full text-white"
+                          style={{ backgroundColor: currentStatus.color }}
+                        >
+                          {currentStatus.label}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span style={{ color: COLORS.bronze }}>{formatPrice(o.total)}</span>
+                        <button
+                          onClick={async () => {
+                            if (window.confirm("هل تريدين حذف هذه الطلبية نهائيًا؟")) {
+                              const res = await deleteOrder(o.id);
+                              if (!res.ok) alert("تعذر حذف الطلبية: " + (res.message || "خطأ غير معروف"));
+                            }
+                          }}
+                          aria-label="حذف الطلبية"
+                        >
+                          <Trash2 size={16} color={COLORS.wine} />
+                        </button>
+                      </div>
+                    </div>
+                    <p style={{ color: COLORS.mute }} dir="ltr">{o.customer?.phone}</p>
+                    <p style={{ color: COLORS.mute }}>
+                      {o.customer?.wilaya}
+                      {o.customer?.commune ? ` — ${o.customer.commune}` : ""} — {o.customer?.address}
+                    </p>
+                    <p style={{ color: COLORS.mute }} className="mt-1">
+                      {o.items?.map((it) => `${it.name} x${it.qty}`).join("، ")}
+                    </p>
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {ORDER_STATUSES.map((s) => (
+                        <button
+                          key={s.id}
+                          onClick={async () => {
+                            const res = await updateOrderStatus(o.id, s.id);
+                            if (!res.ok) alert("تعذر تحديث حالة الطلبية: " + (res.message || "خطأ غير معروف"));
+                          }}
+                          className="text-xs px-2.5 py-1 border rounded-full"
+                          style={{
+                            borderColor: s.color,
+                            color: (o.status || "pending") === s.id ? "#fff" : s.color,
+                            backgroundColor: (o.status || "pending") === s.id ? s.color : "transparent",
+                          }}
+                        >
+                          {s.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                  <p style={{ color: COLORS.mute }} dir="ltr">{o.customer?.phone}</p>
-                  <p style={{ color: COLORS.mute }}>{o.customer?.wilaya} — {o.customer?.address}</p>
-                  <p style={{ color: COLORS.mute }} className="mt-1">
-                    {o.items?.map((it) => `${it.name} x${it.qty}`).join("، ")}
-                  </p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -1434,6 +1603,38 @@ function AppContent() {
     }
   };
 
+  const updateOrderStatus = async (id, status) => {
+    try {
+      const { error } = await supabase.from("orders").update({ status }).eq("id", id);
+      if (error) {
+        console.error("تعذر تحديث حالة الطلبية:", error.message);
+        // نرجع رسالة الخطأ الحقيقية من Supabase حتى تبان فلوحة التحكم
+        // (غالبًا السبب: عمود status غير موجود فجدول orders، أو RLS يمنع التحديث)
+        return { ok: false, message: error.message };
+      }
+      setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status } : o)));
+      return { ok: true };
+    } catch (err) {
+      console.error("تعذر تحديث حالة الطلبية:", err);
+      return { ok: false, message: String(err) };
+    }
+  };
+
+  const deleteOrder = async (id) => {
+    try {
+      const { error } = await supabase.from("orders").delete().eq("id", id);
+      if (error) {
+        console.error("تعذر حذف الطلبية:", error.message);
+        return { ok: false, message: error.message };
+      }
+      setOrders((prev) => prev.filter((o) => o.id !== id));
+      return { ok: true };
+    } catch (err) {
+      console.error("تعذر حذف الطلبية:", err);
+      return { ok: false, message: String(err) };
+    }
+  };
+
   return (
     <div dir="rtl" style={{ backgroundColor: COLORS.ivory, minHeight: "100vh" }}>
       <style>{FONTS}</style>
@@ -1452,7 +1653,7 @@ function AppContent() {
           <Route path="/returns" element={<ReturnsView />} />
           <Route path="/faq" element={<FaqView />} />
           <Route path="/contact" element={<ContactView />} />
-          <Route path="/admin" element={<AdminView products={products} addProduct={addProduct} deleteProduct={deleteProduct} orders={orders} ordersLoading={ordersLoading} />} />
+          <Route path="/admin" element={<AdminView products={products} addProduct={addProduct} deleteProduct={deleteProduct} orders={orders} ordersLoading={ordersLoading} updateOrderStatus={updateOrderStatus} deleteOrder={deleteOrder} />} />
           <Route path="*" element={<HomeView products={products} setView={setView} setActiveCat={setActiveCat} addToCart={addToCart} />} />
         </Routes>
       )}
