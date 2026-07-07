@@ -284,15 +284,7 @@ function ProductCard({ p, setView, addToCart }) {
             {formatPrice(p.price)}
           </p>
         </div>
-        <button
-          onClick={() => addToCart(p.id)}
-          className="text-xs px-3 py-2 border shrink-0 transition-colors hover:text-white"
-          style={{ borderColor: COLORS.ink, color: COLORS.ink, fontFamily: "Jost, sans-serif" }}
-          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = COLORS.ink)}
-          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
-        >
-          Add to bag
-        </button>
+ 
       </div>
     </div>
   );
@@ -552,18 +544,23 @@ function ProductView({ product, setView, addToCart }) {
                 <Plus size={14} />
               </button>
             </div>
+            <div className="flex gap-3 w-full">
             <button
              onClick={() => {
     if (!selectedSize) {
         alert("Please select a size");
         return;
     }
+    if (!selectedColor) {
+  alert("Please select a color");
+  return;
+}
 
     addToCart(product.id, qty, selectedSize, selectedColor);
     setAdded(true);
     setTimeout(() => setAdded(false), 1800);
 }}
-              className="flex-1 py-3.5 text-sm tracking-wide flex items-center justify-center gap-2 transition-colors"
+              className="px-5 py-3.5 text-sm tracking-wide flex items-center justify-center gap-2 transition-colors"
               style={{ backgroundColor: added ? "#3d6b4f" : COLORS.ink, color: COLORS.ivory, fontFamily: "Jost, sans-serif" }}
             >
               {added ? (
@@ -574,6 +571,31 @@ function ProductView({ product, setView, addToCart }) {
                 "Add to Bag"
               )}
             </button>
+            <button
+  onClick={() => {
+    if (!selectedSize) {
+      alert("Please select a size");
+      return;
+    }
+    if (!selectedColor) {
+  alert("Please select a color");
+  return;
+}
+
+    addToCart(product.id, qty, selectedSize, selectedColor);
+    setView("checkout");
+  }}
+  className="flex-1 py-3.5 text-sm border"
+style={{
+  backgroundColor: COLORS.ink,
+  color: COLORS.ivory,
+  borderColor: COLORS.ink,
+  fontFamily: "Jost, sans-serif",
+}}
+>
+  Buy Now
+</button>
+</div>
           </div>
           <div className="text-xs space-y-1" style={{ color: COLORS.mute, fontFamily: "Jost, sans-serif" }}>
             <p>• Shipping within 3-5 business days</p>
@@ -686,6 +708,12 @@ function CheckoutView({ products, cart, setView, clearCart, recordOrder }) {
   const [deliveryType, setDeliveryType] = useState("domicile");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  useEffect(() => {
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth",
+  });
+}, []);
   const items = cart.map((c) => ({ ...c, product: products.find((p) => p.id === c.id) })).filter((i) => i.product);
   const subtotal = items.reduce((s, i) => s + i.product.price * i.qty, 0);
 
