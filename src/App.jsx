@@ -483,8 +483,38 @@ function ProductView({ product, setView, addToCart }) {
         <ChevronRight size={16} /> Return to Shop
       </button>
       <div className="grid md:grid-cols-2 gap-10 md:gap-16">
-        <img src={product.img} alt={product.name} className="w-full object-cover" style={{ aspectRatio: "4/5" }} />
-        <div>
+       <img
+
+  src={product.images?.[0] || product.img}
+
+  alt={product.name}
+
+  className="w-full object-cover"
+style={{ aspectRatio: "4/5" }}
+/>
+{Array.isArray(product.images) && product.images.length > 1 && (
+
+  <div className="flex gap-2 mt-3 flex-wrap">
+
+    {product.images.map((image, index) => (
+
+      <img
+
+        key={index}
+
+        src={image}
+
+        alt={`${product.name}-${index}`}
+
+        className="w-20 h-24 object-cover rounded border"
+
+      />
+
+    ))}
+
+  </div>
+
+)}
           <p className="text-xs tracking-[0.2em] mb-3" style={{ color: COLORS.bronze, fontFamily: "Jost, sans-serif" }}>
             {CATEGORIES.find((c) => c.id === product.cat)?.label}
           </p>
@@ -609,7 +639,7 @@ style={{
   Buy Now
 </button>
 </div>
-          </div>
+
           <div className="text-xs space-y-1" style={{ color: COLORS.mute, fontFamily: "Jost, sans-serif" }}>
             <p>• Shipping within 3-5 business days</p>
             <p>• Return policy within 72 hours</p>
@@ -1109,6 +1139,7 @@ function AdminView({ products, addProduct, deleteProduct, orders, ordersLoading,
     name: "",
     price: "",
     img: "",
+    images: [],
     description: "",
     sizes: [],
     colors: [],
@@ -1117,13 +1148,20 @@ function AdminView({ products, addProduct, deleteProduct, orders, ordersLoading,
 
   // رفع صورة المنتج مباشرة من الجهاز إلى Supabase Storage
   // ملاحظة: يجب إنشاء bucket باسم "product-images" في Supabase وجعله public
-  const handleImageUpload = async (file) => {
-    if (!file) return;
-    setUploading(true);
-    setFormError("");
-    try {
+  const handleImageUpload = async (files) => {
+
+  if (!files || files.length === 0) return;
+
+  setUploading(true);
+
+  setFormError("");
+
+  try {
+
+    const imageUrls = [];
+    for (const file of files) {
       const ext = file.name.split(".").pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+         const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
       const { error: uploadError } = await supabase.storage
         .from("product-images")
         .upload(fileName, file, { cacheControl: "3600", upsert: false });
@@ -1135,15 +1173,32 @@ function AdminView({ products, addProduct, deleteProduct, orders, ordersLoading,
       }
       const { data: publicUrlData } = supabase.storage.from("product-images").getPublicUrl(fileName);
       const publicUrl = publicUrlData?.publicUrl;
-      if (publicUrl) {
-        setForm((f) => ({ ...f, img: publicUrl }));
-        setImgPreview(publicUrl);
-      }
-    } catch (err) {
-      setFormError("تعذر رفع الصورة: " + String(err?.message || err));
-    } finally {
-      setUploading(false);
-    }
+  if (publicUrl) {
+
+    imageUrls.push(publicUrl);
+} 
+} 
+setForm(f => ({
+
+  ...f,
+
+  img: imageUrls[0],
+
+  images: imageUrls,
+
+}));
+
+setImgPreview(imageUrls[0]);
+
+} catch (err) {
+
+  setFormError("تعذر رفع الصورة: " + String(err?.message || err));
+
+} finally {
+
+  setUploading(false);
+
+}
   };
 
   const filteredOrders = statusFilter === "all" ? orders : orders.filter((o) => (o.status || "pending") === statusFilter);
@@ -1221,6 +1276,7 @@ function AdminView({ products, addProduct, deleteProduct, orders, ordersLoading,
                   name: form.name,
                   price: Number(form.price),
                   img: form.img,
+                  images: form.images,
                   description: form.description,
                   sizes: form.sizes,
                   colors: form.colors,
@@ -1259,9 +1315,10 @@ function AdminView({ products, addProduct, deleteProduct, orders, ordersLoading,
                       ref={fileInputRef}
                       type="file"
                       accept="image/*"
+                      multiple
                       className="hidden"
                       disabled={uploading}
-                      onChange={(e) => handleImageUpload(e.target.files?.[0])}
+                      onChange={(e) => handleImageUpload(e.target.files)}
                     />
                   </label>
                 </div>
