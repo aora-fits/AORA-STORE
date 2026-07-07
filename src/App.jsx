@@ -548,11 +548,11 @@ function ProductView({ product, setView, addToCart }) {
             <button
              onClick={() => {
     if (!selectedSize) {
-        alert("Please select a size");
+        alert("يرجى اختيار المقاس");
         return;
     }
     if (!selectedColor) {
-  alert("Please select a color");
+  alert("يرجى اختيار اللون");
   return;
 }
 
@@ -574,11 +574,11 @@ function ProductView({ product, setView, addToCart }) {
             <button
   onClick={() => {
     if (!selectedSize) {
-      alert("Please select a size");
+      alert("يرجى اختيار المقاس");
       return;
     }
     if (!selectedColor) {
-  alert("Please select a color");
+  alert("يرجى اختيار اللون");
   return;
 }
 
@@ -790,7 +790,24 @@ function CheckoutView({ products, cart, setView, clearCart, recordOrder }) {
         )}
         <div className="grid grid-cols-2 gap-4">
           <input required placeholder="الاسم الكامل" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="border px-4 py-3 text-sm col-span-2" style={{ borderColor: COLORS.taupe, fontFamily: "Jost, sans-serif" }} />
-          <input required placeholder="رقم الهاتف" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="border px-4 py-3 text-sm" style={{ borderColor: COLORS.taupe, fontFamily: "Jost, sans-serif" }} />
+         <input
+  required
+  type="tel"
+  placeholder="رقم الهاتف"
+  value={form.phone}
+onChange={(e) =>
+  setForm({
+    ...form,
+    phone: e.target.value.replace(/\D/g, "").slice(0, 10),
+  })
+}
+  
+  pattern="[0-9]{10}"
+  maxLength={10}
+  required
+  className="border px-4 py-3 text-sm bg-white"
+  style={{ borderColor: COLORS.taupe, fontFamily: "Jost, sans-serif" }}
+/>
           <select
             required
             value={form.wilaya}
