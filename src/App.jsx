@@ -1,9 +1,17 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { ShoppingBag, X, Plus, Minus, Search, Menu, ChevronLeft, ChevronRight, Heart, Check, ChevronDown, Lock, Trash2, Package, Settings } from "lucide-react";
 import { supabase } from "./supabaseClient";
+import { BrowserRouter, Routes, Route, useNavigate, useLocation, useParams } from "react-router-dom";
 import v1 from "./assets/v1.jfif";
 import v2 from "./assets/v2.jfif";
 import v3 from "./assets/v3.jfif";
+
+// ⚠️ تنبيه أمني: هذا الكود يعمل في الفرونت-إند (client-side)، أي شخص يفتح "View Source"
+// أو أدوات المطوّر (DevTools) يقدر يشوف هذا الرمز بسهولة. هذا لا يوفّر حماية حقيقية.
+// الحماية الفعلية للوحة التحكم لازم تكون عبر Supabase Auth (تسجيل دخول حقيقي)
+// + قواعد Row Level Security (RLS) في Supabase تمنع أي عملية كتابة/حذف على
+// جداول products و orders إلا من مستخدم مصرّح له. هذا الرمز هنا هو فقط
+// طبقة حماية بسيطة تمنع "التصفح العرضي" وليس حماية أمنية حقيقية.
 const ADMIN_PASSCODE = "230615"; // غيّريه لأي رمز تحبينه
 
 const FONTS = `
@@ -89,6 +97,40 @@ const WILAYAS = [
 
 function formatPrice(n) {
   return n.toLocaleString("ar-DZ") + " د.ج";
+}
+
+// ---------- Routing helpers ----------
+// خريطة تربط كل "صفحة" برابط (URL) حقيقي خاص فيها
+const ROUTE_MAP = {
+  home: "/",
+  shop: "/shop",
+  about: "/about",
+  "customer-care": "/customer-care",
+  shipping: "/shipping",
+  returns: "/returns",
+  faq: "/faq",
+  contact: "/contact",
+  admin: "/admin",
+  checkout: "/checkout",
+};
+
+function pathToView(pathname) {
+  if (pathname === "/") return "home";
+  if (pathname.startsWith("/product/")) return "product";
+  const clean = pathname.replace(/^\//, "");
+  return ROUTE_MAP[clean] !== undefined || clean === "" ? clean || "home" : clean;
+}
+
+// Hook يرجع دالة setView(viewId, param) تبني الرابط الصحيح وتنتقل إليه فعليًا
+function useGoTo() {
+  const navigate = useNavigate();
+  return (view, param) => {
+    if (view === "product") {
+      navigate(param !== undefined ? `/product/${param}` : "/shop");
+      return;
+    }
+    navigate(ROUTE_MAP[view] || "/");
+  };
 }
 
 function Logo({ size = "text-2xl", dark }) {
@@ -203,14 +245,11 @@ function Hero({ setView }) {
   );
 }
 
-function ProductCard({ p, setView, setSelectedId, addToCart }) {
+function ProductCard({ p, setView, addToCart }) {
   return (
     <div className="group">
       <button
-        onClick={() => {
-          setSelectedId(p.id);
-          setView("product");
-        }}
+        onClick={() => setView("product", p.id)}
         className="block w-full relative overflow-hidden mb-3"
         style={{ aspectRatio: "4/5" }}
       >
@@ -225,10 +264,7 @@ function ProductCard({ p, setView, setSelectedId, addToCart }) {
       <div className="flex items-start justify-between gap-2">
         <div>
           <button
-            onClick={() => {
-              setSelectedId(p.id);
-              setView("product");
-            }}
+            onClick={() => setView("product", p.id)}
             className="text-sm text-right"
             style={{ fontFamily: "Jost, sans-serif", color: COLORS.ink }}
           >
@@ -354,7 +390,7 @@ function Footer({ setView }) {
   );
 }
 
-function HomeView({ products, setView, setActiveCat, setSelectedId, addToCart }) {
+function HomeView({ products, setView, setActiveCat, addToCart }) {
   return (
     <>
       <Hero setView={setView} />
@@ -364,14 +400,13 @@ function HomeView({ products, setView, setActiveCat, setSelectedId, addToCart })
         activeCat="all"
         setActiveCat={() => {}}
         setView={setView}
-        setSelectedId={setSelectedId}
         addToCart={addToCart}
       />
     </>
   );
 }
 
-function ShopView({ products, activeCat, setActiveCat, setView, setSelectedId, addToCart }) {
+function ShopView({ products, activeCat, setActiveCat, setView, addToCart }) {
   const filtered = useMemo(() => (activeCat === "all" ? products : products.filter((p) => p.cat === activeCat)), [activeCat, products]);
   return (
     <section className="max-w-6xl mx-auto px-5 md:px-8 py-14">
@@ -402,7 +437,7 @@ function ShopView({ products, activeCat, setActiveCat, setView, setSelectedId, a
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-x-5 gap-y-10">
           {filtered.map((p) => (
-            <ProductCard key={p.id} p={p} setView={setView} setSelectedId={setSelectedId} addToCart={addToCart} />
+            <ProductCard key={p.id} p={p} setView={setView} addToCart={addToCart} />
           ))}
         </div>
       )}
@@ -412,10 +447,21 @@ function ShopView({ products, activeCat, setActiveCat, setView, setSelectedId, a
 
 function ProductView({ product, setView, addToCart }) {
   const [qty, setQty] = useState(1);
-  const [added, setAdded] = useState(false); 
+  const [added, setAdded] = useState(false);
   const [selectedSize, setSelectedSize] = useState("");
   const [selectedColor, setSelectedColor] = useState("");
-  if (!product) return null;
+
+  if (!product) {
+    return (
+      <section className="max-w-xl mx-auto px-5 py-24 text-center">
+        <p className="text-lg mb-6" style={{ fontFamily: "Fraunces, serif" }}>هذا المنتج غير موجود</p>
+        <button onClick={() => setView("shop")} className="px-6 py-3 text-sm" style={{ backgroundColor: COLORS.ink, color: COLORS.ivory, fontFamily: "Jost, sans-serif" }}>
+          Return to Shop
+        </button>
+      </section>
+    );
+  }
+
   return (
     <section className="max-w-6xl mx-auto px-5 md:px-8 py-12">
       <button onClick={() => setView("shop")} className="text-sm flex items-center gap-1 mb-8" style={{ color: COLORS.mute, fontFamily: "Jost, sans-serif" }}>
@@ -529,6 +575,13 @@ function ProductView({ product, setView, addToCart }) {
   );
 }
 
+// Route wrapper: يقرأ id المنتج من الرابط (URL) مباشرة
+function ProductRoute({ products, addToCart, setView }) {
+  const { id } = useParams();
+  const product = products.find((p) => String(p.id) === String(id));
+  return <ProductView product={product} setView={setView} addToCart={addToCart} />;
+}
+
 function CartDrawer({ products, open, onClose, cart, updateQty, removeItem, setView }) {
   const items = cart.map((c) => ({ ...c, product: products.find((p) => p.id === c.id) })).filter((i) => i.product);
   const total = items.reduce((s, i) => s + i.product.price * i.qty, 0);
@@ -556,7 +609,7 @@ function CartDrawer({ products, open, onClose, cart, updateQty, removeItem, setV
             </p>
           )}
           {items.map((i) => (
-            <div key={i.id} className="flex gap-4 py-4 border-b" style={{ borderColor: COLORS.taupe }}>
+            <div key={`${i.id}-${i.size ?? "nosize"}`} className="flex gap-4 py-4 border-b" style={{ borderColor: COLORS.taupe }}>
               <img src={i.product.img} alt="" className="w-20 h-24 object-cover shrink-0" />
               <div className="flex-1 flex flex-col justify-between">
                 <div className="flex justify-between gap-2">
@@ -569,17 +622,17 @@ function CartDrawer({ products, open, onClose, cart, updateQty, removeItem, setV
     Size: {i.size}
   </p>
 )}
-                  <button onClick={() => removeItem(i.id)} aria-label="حذف">
+                  <button onClick={() => removeItem(i.id, i.size)} aria-label="حذف">
                     <X size={15} color={COLORS.mute} />
                   </button>
                 </div>
                 <p className="text-xs" style={{ color: COLORS.bronze, fontFamily: "Jost, sans-serif" }}>{formatPrice(i.product.price)}</p>
                 <div className="flex items-center border w-fit" style={{ borderColor: COLORS.taupe }}>
-                  <button onClick={() => updateQty(i.id, i.qty - 1)} className="px-2 py-1">
+                  <button onClick={() => updateQty(i.id, i.qty - 1, i.size)} className="px-2 py-1">
                     <Minus size={12} />
                   </button>
                   <span className="px-3 text-xs">{i.qty}</span>
-                  <button onClick={() => updateQty(i.id, i.qty + 1)} className="px-2 py-1">
+                  <button onClick={() => updateQty(i.id, i.qty + 1, i.size)} className="px-2 py-1">
                     <Plus size={12} />
                   </button>
                 </div>
@@ -614,6 +667,8 @@ function CheckoutView({ products, cart, setView, clearCart, recordOrder }) {
   const [step, setStep] = useState("form");
   const [form, setForm] = useState({ name: "", phone: "", wilaya: "", address: "" });
   const [deliveryType, setDeliveryType] = useState("domicile");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
   const items = cart.map((c) => ({ ...c, product: products.find((p) => p.id === c.id) })).filter((i) => i.product);
   const subtotal = items.reduce((s, i) => s + i.product.price * i.qty, 0);
 
@@ -645,10 +700,7 @@ function CheckoutView({ products, cart, setView, clearCart, recordOrder }) {
           Thank you for choosing AORA. Your order is being carefully prepared with attention to every detail.
         </p>
         <button
-          onClick={() => {
-            clearCart();
-            setView("home");
-          }}
+          onClick={() => setView("home")}
           className="px-6 py-3 text-sm"
           style={{ backgroundColor: COLORS.ink, color: COLORS.ivory, fontFamily: "Jost, sans-serif" }}
         >
@@ -662,10 +714,12 @@ function CheckoutView({ products, cart, setView, clearCart, recordOrder }) {
     <section className="max-w-5xl mx-auto px-5 md:px-8 py-14 grid md:grid-cols-5 gap-12">
       <form
         className="md:col-span-3 space-y-5"
-        onSubmit={(e) => {
+        onSubmit={async (e) => {
           e.preventDefault();
-          if (!selectedWilaya) return;
-          recordOrder({
+          if (!selectedWilaya || submitting) return;
+          setError("");
+          setSubmitting(true);
+          const ok = await recordOrder({
             id: Date.now(),
             date: new Date().toISOString(),
             customer: form,
@@ -675,10 +729,20 @@ function CheckoutView({ products, cart, setView, clearCart, recordOrder }) {
             subtotal,
             total,
           });
-          setStep("done");
+          setSubmitting(false);
+          if (ok) {
+            setStep("done");
+          } else {
+            setError("حدث خطأ أثناء إرسال الطلب. حاولي مرة أخرى من فضلك.");
+          }
         }}
       >
         <h1 className="text-2xl mb-2" style={{ fontFamily: "Fraunces, serif" }}>معلومات التوصيل</h1>
+        {error && (
+          <p className="text-sm px-4 py-3" style={{ backgroundColor: "#fbe3e3", color: COLORS.wine, fontFamily: "Jost, sans-serif" }}>
+            {error}
+          </p>
+        )}
         <div className="grid grid-cols-2 gap-4">
           <input required placeholder="الاسم الكامل" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="border px-4 py-3 text-sm col-span-2" style={{ borderColor: COLORS.taupe, fontFamily: "Jost, sans-serif" }} />
           <input required placeholder="رقم الهاتف" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="border px-4 py-3 text-sm" style={{ borderColor: COLORS.taupe, fontFamily: "Jost, sans-serif" }} />
@@ -735,18 +799,18 @@ function CheckoutView({ products, cart, setView, clearCart, recordOrder }) {
         </div>
         <button
           type="submit"
-          disabled={!selectedWilaya || (!domicileAvailable && !stopdeskAvailable)}
+          disabled={!selectedWilaya || (!domicileAvailable && !stopdeskAvailable) || submitting}
           className="w-full py-4 text-sm tracking-wide mt-4"
-          style={{ backgroundColor: COLORS.ink, color: COLORS.ivory, fontFamily: "Jost, sans-serif", opacity: !selectedWilaya ? 0.5 : 1 }}
+          style={{ backgroundColor: COLORS.ink, color: COLORS.ivory, fontFamily: "Jost, sans-serif", opacity: !selectedWilaya || submitting ? 0.5 : 1 }}
         >
-          Confirm Order — {formatPrice(total)}
+          {submitting ? "جارٍ الإرسال..." : `Confirm Order — ${formatPrice(total)}`}
         </button>
       </form>
       <div className="md:col-span-2">
         <h2 className="text-lg mb-4" style={{ fontFamily: "Fraunces, serif" }}>ملخص الطلب</h2>
         <div className="space-y-4">
           {items.map((i) => (
-            <div key={i.id} className="flex gap-3 text-sm" style={{ fontFamily: "Jost, sans-serif" }}>
+            <div key={`${i.id}-${i.size ?? "nosize"}`} className="flex gap-3 text-sm" style={{ fontFamily: "Jost, sans-serif" }}>
               <img src={i.product.img} className="w-14 h-16 object-cover" alt="" />
               <div className="flex-1">
                 <p>{i.product.name}</p>
@@ -952,14 +1016,17 @@ function AdminView({ products, addProduct, deleteProduct, orders, ordersLoading 
   const [unlocked, setUnlocked] = useState(false);
   const [code, setCode] = useState("");
   const [tab, setTab] = useState("products");
-  const [form, setForm] = useState({
-  name: "",
-  price: "",
-  img: "",
-  description: "",
-  sizes: [],
-  colors: []
-});
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState("");
+  const emptyForm = {
+    name: "",
+    price: "",
+    img: "",
+    description: "",
+    sizes: [],
+    colors: [],
+  };
+  const [form, setForm] = useState(emptyForm);
 
   if (!unlocked) {
     return (
@@ -1016,19 +1083,34 @@ function AdminView({ products, addProduct, deleteProduct, orders, ordersLoading 
         <div className="grid md:grid-cols-2 gap-10">
           <div>
             <h2 className="text-lg mb-4" style={{ fontFamily: "Fraunces, serif" }}>إضافة منتج</h2>
+            {formError && (
+              <p className="text-sm px-4 py-3 mb-3" style={{ backgroundColor: "#fbe3e3", color: COLORS.wine, fontFamily: "Jost, sans-serif" }}>
+                {formError}
+              </p>
+            )}
             <form
               className="space-y-3"
-              onSubmit={(e) => {
+              onSubmit={async (e) => {
                 e.preventDefault();
-                if (!form.name || !form.price) return;
-                addProduct({
+                if (!form.name || !form.price || saving) return;
+                setFormError("");
+                setSaving(true);
+                // form.sizes و form.colors مصفوفات أصلاً (من الـ checkboxes/الألوان)
+                // لا حاجة لاستدعاء .split() عليها
+                const ok = await addProduct({
                   name: form.name,
                   price: Number(form.price),
                   img: form.img,
                   description: form.description,
-                  sizes: form.sizes.split(",").map((s) => s.trim()),
-                  colors: form.colors.split(",").map((c) => c.trim()),
+                  sizes: form.sizes,
+                  colors: form.colors,
                 });
+                setSaving(false);
+                if (ok) {
+                  setForm(emptyForm);
+                } else {
+                  setFormError("تعذر حفظ المنتج. حاولي مرة أخرى.");
+                }
               }}
             >
               <input required placeholder="اسم المنتج" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full border px-4 py-3 text-sm" style={{ borderColor: COLORS.taupe, fontFamily: "Jost, sans-serif" }} />
@@ -1106,8 +1188,8 @@ function AdminView({ products, addProduct, deleteProduct, orders, ordersLoading 
 </div>
 </div>
 
-              <button type="submit" className="flex items-center justify-center gap-2 w-full py-3 text-sm" style={{ backgroundColor: COLORS.ink, color: COLORS.ivory, fontFamily: "Jost, sans-serif" }}>
-                <Plus size={15} /> إضافة
+              <button type="submit" disabled={saving} className="flex items-center justify-center gap-2 w-full py-3 text-sm" style={{ backgroundColor: COLORS.ink, color: COLORS.ivory, fontFamily: "Jost, sans-serif", opacity: saving ? 0.6 : 1 }}>
+                <Plus size={15} /> {saving ? "جارٍ الإضافة..." : "إضافة"}
               </button>
             </form>
           </div>
@@ -1121,7 +1203,13 @@ function AdminView({ products, addProduct, deleteProduct, orders, ordersLoading 
                     <p>{p.name}</p>
                     <p style={{ color: COLORS.bronze }}>{formatPrice(p.price)}</p>
                   </div>
-                  <button onClick={() => deleteProduct(p.id)} aria-label="حذف">
+                  <button
+                    onClick={async () => {
+                      const ok = await deleteProduct(p.id);
+                      if (!ok) alert("تعذر حذف المنتج. حاولي مرة أخرى.");
+                    }}
+                    aria-label="حذف"
+                  >
                     <Trash2 size={16} color={COLORS.wine} />
                   </button>
                 </div>
@@ -1165,10 +1253,12 @@ function AdminView({ products, addProduct, deleteProduct, orders, ordersLoading 
   );
 }
 
-export default function App() {
-  const [view, setView] = useState("home");
+function AppContent() {
+  const location = useLocation();
+  const setView = useGoTo();
+  const view = pathToView(location.pathname);
+
   const [activeCat, setActiveCat] = useState("all");
-  const [selectedId, setSelectedId] = useState(null);
   const [cart, setCart] = useState([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -1205,59 +1295,76 @@ export default function App() {
   };
   useEffect(() => {
     if (view === "admin") loadOrders();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view]);
 
-const addToCart = (id, qty = 1, size = null) => {
-  setCart((prev) => {
-    const existing = prev.find(
-  (c) => c.id === id && c.size === size
-);
+  const addToCart = (id, qty = 1, size = null) => {
+    setCart((prev) => {
+      const existing = prev.find((c) => c.id === id && c.size === size);
+      if (existing) {
+        return prev.map((c) => (c.id === id && c.size === size ? { ...c, qty: c.qty + qty } : c));
+      }
+      return [...prev, { id, qty, size }];
+    });
+    setCartOpen(true);
+  };
 
-    if (existing) {
-      return prev.map((c) =>
-        c.id === id && c.size === size
-          ? { ...c, qty: c.qty + qty }
-          : c
-      );
-    }
-
-    return [...prev, { id, qty, size }];
-  });
-
-  setCartOpen(true);
-};
+  // ⚠️ إصلاح: قبل كانت هذه الدوال تتجاهل المقاس (size) فتؤثر على كل نسخ
+  // المنتج بنفس id بغض النظر عن المقاس. الآن تتحقق من id و size معًا.
   const updateQty = (id, qty, size = null) => {
     if (qty < 1) return;
-    setCart((prev) => prev.map((c) => (c.id === id ? { ...c, qty } : c)));
+    setCart((prev) => prev.map((c) => (c.id === id && c.size === size ? { ...c, qty } : c)));
   };
-  const removeItem = (id) => setCart((prev) => prev.filter((c) => c.id !== id));
+  const removeItem = (id, size = null) => {
+    setCart((prev) => prev.filter((c) => !(c.id === id && c.size === size)));
+  };
   const clearCart = () => setCart([]);
   const cartCount = cart.reduce((s, c) => s + c.qty, 0);
-  const selectedProduct = products.find((p) => p.id === selectedId);
 
   const addProduct = async (data) => {
-    const { data: inserted, error } = await supabase.from("products").insert([{ cat: "robes", ...data }]).select();
-    if (error) {
-      console.error("تعذر حفظ المنتج:", error.message);
-      return;
+    try {
+      const { data: inserted, error } = await supabase.from("products").insert([{ cat: "robes", ...data }]).select();
+      if (error) {
+        console.error("تعذر حفظ المنتج:", error.message);
+        return false;
+      }
+      setProducts((prev) => [inserted[0], ...prev]);
+      return true;
+    } catch (err) {
+      console.error("تعذر حفظ المنتج:", err);
+      return false;
     }
-    setProducts((prev) => [inserted[0], ...prev]);
   };
 
   const deleteProduct = async (id) => {
-    const { error } = await supabase.from("products").delete().eq("id", id);
-    if (error) {
-      console.error("تعذر حذف المنتج:", error.message);
-      return;
+    try {
+      const { error } = await supabase.from("products").delete().eq("id", id);
+      if (error) {
+        console.error("تعذر حذف المنتج:", error.message);
+        return false;
+      }
+      setProducts((prev) => prev.filter((p) => p.id !== id));
+      return true;
+    } catch (err) {
+      console.error("تعذر حذف المنتج:", err);
+      return false;
     }
-    setProducts((prev) => prev.filter((p) => p.id !== id));
   };
 
   const recordOrder = async (order) => {
-    const { id, ...orderData } = order;
-    const { error } = await supabase.from("orders").insert([orderData]);
-    if (error) console.error("تعذر حفظ الطلبية:", error.message);
-    clearCart();
+    try {
+      const { id, ...orderData } = order;
+      const { error } = await supabase.from("orders").insert([orderData]);
+      if (error) {
+        console.error("تعذر حفظ الطلبية:", error.message);
+        return false;
+      }
+      clearCart();
+      return true;
+    } catch (err) {
+      console.error("تعذر حفظ الطلبية:", err);
+      return false;
+    }
   };
 
   return (
@@ -1267,22 +1374,31 @@ const addToCart = (id, qty = 1, size = null) => {
       {productsLoading ? (
         <p className="text-center py-24 text-sm" style={{ color: COLORS.mute, fontFamily: "Jost, sans-serif" }}>جارٍ تحميل المتجر...</p>
       ) : (
-        <>
-          {view === "home" && <HomeView products={products} setView={setView} setActiveCat={setActiveCat} setSelectedId={setSelectedId} addToCart={addToCart} />}
-          {view === "shop" && <ShopView products={products} activeCat={activeCat} setActiveCat={setActiveCat} setView={setView} setSelectedId={setSelectedId} addToCart={addToCart} />}
-          {view === "product" && <ProductView product={selectedProduct} setView={setView} addToCart={addToCart} />}
-          {view === "checkout" && <CheckoutView products={products} cart={cart} setView={setView} clearCart={clearCart} recordOrder={recordOrder} />}
-          {view === "about" && <AboutView />}
-          {view === "customer-care" && <CustomerCareView />}
-          {view === "shipping" && <ShippingView />}
-          {view === "returns" && <ReturnsView />}
-          {view === "faq" && <FaqView />}
-          {view === "contact" && <ContactView />}
-          {view === "admin" && <AdminView products={products} addProduct={addProduct} deleteProduct={deleteProduct} orders={orders} ordersLoading={ordersLoading} />}
-        </>
+        <Routes>
+          <Route path="/" element={<HomeView products={products} setView={setView} setActiveCat={setActiveCat} addToCart={addToCart} />} />
+          <Route path="/shop" element={<ShopView products={products} activeCat={activeCat} setActiveCat={setActiveCat} setView={setView} addToCart={addToCart} />} />
+          <Route path="/product/:id" element={<ProductRoute products={products} addToCart={addToCart} setView={setView} />} />
+          <Route path="/checkout" element={<CheckoutView products={products} cart={cart} setView={setView} clearCart={clearCart} recordOrder={recordOrder} />} />
+          <Route path="/about" element={<AboutView />} />
+          <Route path="/customer-care" element={<CustomerCareView />} />
+          <Route path="/shipping" element={<ShippingView />} />
+          <Route path="/returns" element={<ReturnsView />} />
+          <Route path="/faq" element={<FaqView />} />
+          <Route path="/contact" element={<ContactView />} />
+          <Route path="/admin" element={<AdminView products={products} addProduct={addProduct} deleteProduct={deleteProduct} orders={orders} ordersLoading={ordersLoading} />} />
+          <Route path="*" element={<HomeView products={products} setView={setView} setActiveCat={setActiveCat} addToCart={addToCart} />} />
+        </Routes>
       )}
       <Footer setView={setView} />
       <CartDrawer products={products} open={cartOpen} onClose={() => setCartOpen(false)} cart={cart} updateQty={updateQty} removeItem={removeItem} setView={setView} />
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AppContent />
+    </BrowserRouter>
   );
 }
