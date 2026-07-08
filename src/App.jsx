@@ -334,13 +334,13 @@ function Footer({ setView }) {
             {col.title === "Customer Care" ? (
               <button
                 onClick={() => setView("customer-care")}
-                className="text-xl mb-4"
+                className="text-sm mb-4"
                 style={{ color: COLORS.bronze, fontFamily: "Jost, sans-serif" }}
               >
                 {col.title}
               </button>
             ) : (
-              <p className="text-xl mb-4" style={{ color: COLORS.bronze, fontFamily: "Jost, sans-serif" }}>
+              <p className="text-sm mb-4" style={{ color: COLORS.bronze, fontFamily: "Jost, sans-serif" }}>
                 {col.title}
               </p>
             )}
@@ -374,16 +374,16 @@ function Footer({ setView }) {
 }}
     target={col.title === "Follow Us" ? "_blank" : undefined}
     rel={col.title === "Follow Us" ? "noopener noreferrer" : undefined}
-    className="text-xl hover:opacity-70 transition"
+    className="text-sm hover:opacity-70 transition"
     style={{ color: COLORS.bronze }}
   >
     {col.title === "Follow Us" ? (
   it === "Instagram" ? (
-    <i className="fab fa-instagram"></i>
+    <i className="fab fa-instagram text-xl"></i>
   ) : it === "Facebook" ? (
-    <i className="fab fa-facebook-f"></i>
+    <i className="fab fa-facebook-f text-xl"></i>
   ) : (
-    <i className="fab fa-tiktok"></i>
+    <i className="fab fa-tiktok text-xl"></i>
   )
 ) : (
   it
@@ -981,11 +981,6 @@ onChange={(e) =>
   );
 }
 
-const FAQS = [
-  { q: "كم تستغرق مدة التوصيل؟", a: "يصل طلبك عادة خلال 3 إلى 5 أيام عمل داخل الوطن، وقد تختلف المدة حسب المنطقة." },
-  { q: "هل يمكنني إرجاع القطعة؟", a: "نعم، يمكن إرجاع أو استبدال أي قطعة خلال 72 ساعة من الاستلام بشرط أن تكون بحالتها الأصلية." },
-  { q: "هل التوصيل متوفر لكل الولايات؟", a: "نغطي جميع الولايات عبر شركائنا في التوصيل، مع خيار الدفع عند الاستلام." },
-];
 
 function AboutView() {
   const [openFaq, setOpenFaq] = useState(null);
@@ -1013,28 +1008,7 @@ function AboutView() {
 ))} 
       </div>
       <div className="max-w-2xl mx-auto px-5 md:px-8 py-16">
-        <h2 className="text-2xl mb-8 text-center" style={{ fontFamily: "Fraunces, serif" }}>
-          FAQS
-        </h2>
-        <div className="space-y-2">
-          {FAQS.map((f, i) => (
-            <div key={i} className="border-b" style={{ borderColor: COLORS.taupe }}>
-              <button
-                onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                className="w-full flex items-center justify-between py-4 text-sm text-right"
-                style={{ fontFamily: "Jost, sans-serif" }}
-              >
-                {f.q}
-                <ChevronDown size={16} style={{ transform: openFaq === i ? "rotate(180deg)" : "none", transition: "transform 0.2s" }} />
-              </button>
-              {openFaq === i && (
-                <p className="pb-4 text-sm leading-relaxed" style={{ color: COLORS.mute, fontFamily: "Jost, sans-serif", fontWeight: 300 }}>
-                  {f.a}
-                </p>
-              )}
-            </div>
-          ))}
-        </div>
+       
       </div>
     </section>
   );
