@@ -483,7 +483,7 @@ function ProductView({ product, setView, addToCart }) {
       <button onClick={() => setView("shop")} className="text-sm flex items-center gap-1 mb-8" style={{ color: COLORS.mute, fontFamily: "Jost, sans-serif" }}>
         <ChevronRight size={16} /> Return to Shop
       </button>
-      <div className="grid md:grid-cols-2 gap-10 md:gap-16">
+   <div className="grid md:grid-cols-2 gap-6 md:gap-8">
        <img
 
   src={selectedImage}
@@ -493,6 +493,8 @@ function ProductView({ product, setView, addToCart }) {
   className="w-full object-cover"
 style={{ aspectRatio: "4/5" }}
 />
+
+</div>
 {Array.isArray(product.images) && product.images.length > 1 && (
 
   <div className="flex gap-2 mt-3 flex-wrap">
@@ -516,6 +518,8 @@ onClick={() => setSelectedImage(image)}
   </div>
 
 )}
+
+<div className="px-6 md:px-0 pt-8 md:pt-0">
           <p className="text-xs tracking-[0.2em] mb-3" style={{ color: COLORS.bronze, fontFamily: "Jost, sans-serif" }}>
             {CATEGORIES.find((c) => c.id === product.cat)?.label}
           </p>
@@ -642,8 +646,7 @@ style={{
 </div>
 
           <div className="text-xs space-y-1" style={{ color: COLORS.mute, fontFamily: "Jost, sans-serif" }}>
-            <p>• Shipping within 3-5 business days</p>
-            <p>• Return policy within 72 hours</p>
+         
           </div>
         </div>
       </div>
