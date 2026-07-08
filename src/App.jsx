@@ -465,6 +465,7 @@ function ProductView({ product, setView, addToCart }) {
   const [added, setAdded] = useState(false);
   const [selectedSize, setSelectedSize] = useState("");
   const [selectedColor, setSelectedColor] = useState("");
+  const [selectedImage, setSelectedImage] = useState(product.images?.[0] || product.img);
 
   if (!product) {
     return (
@@ -485,7 +486,7 @@ function ProductView({ product, setView, addToCart }) {
       <div className="grid md:grid-cols-2 gap-10 md:gap-16">
        <img
 
-  src={product.images?.[0] || product.img}
+  src={selectedImage}
 
   alt={product.name}
 
@@ -505,8 +506,8 @@ style={{ aspectRatio: "4/5" }}
         src={image}
 
         alt={`${product.name}-${index}`}
-
-        className="w-20 h-24 object-cover rounded border"
+onClick={() => setSelectedImage(image)}
+        className="w-20 h-24 object-cover rounded border cursor-pointer transition-transform hover:scale-105"
 
       />
 
