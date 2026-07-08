@@ -224,7 +224,7 @@ function TopBar({ view, setView, cartCount, setCartOpen, menuOpen, setMenuOpen }
                 setView(n.id);
                 setMenuOpen(false);
               }}
-              className="text-right text-sm py-1"
+              className="text-right text-xl py-1"
               style={{ color: view === n.id ? COLORS.bronze : COLORS.ink }}
             >
               {n.label}
@@ -288,12 +288,12 @@ function ProductCard({ p, setView, addToCart }) {
         <div>
           <button
             onClick={() => setView("product", slugify(p.name))}
-            className="text-sm text-right"
+            className="text-xl text-right"
             style={{ fontFamily: "Jost, sans-serif", color: COLORS.ink }}
           >
             {p.name}
           </button>
-          <p className="text-sm mt-1" style={{ color: COLORS.bronze, fontFamily: "Jost, sans-serif" }}>
+          <p className="text-xl mt-1" style={{ color: COLORS.bronze, fontFamily: "Jost, sans-serif" }}>
             {formatPrice(p.price)}
           </p>
         </div>
@@ -334,13 +334,13 @@ function Footer({ setView }) {
             {col.title === "Customer Care" ? (
               <button
                 onClick={() => setView("customer-care")}
-                className="text-sm mb-4"
+                className="text-xl mb-4"
                 style={{ color: COLORS.bronze, fontFamily: "Jost, sans-serif" }}
               >
                 {col.title}
               </button>
             ) : (
-              <p className="text-sm mb-4" style={{ color: COLORS.bronze, fontFamily: "Jost, sans-serif" }}>
+              <p className="text-xl mb-4" style={{ color: COLORS.bronze, fontFamily: "Jost, sans-serif" }}>
                 {col.title}
               </p>
             )}
@@ -374,7 +374,7 @@ function Footer({ setView }) {
 }}
     target={col.title === "Follow Us" ? "_blank" : undefined}
     rel={col.title === "Follow Us" ? "noopener noreferrer" : undefined}
-    className="text-sm hover:opacity-70 transition"
+    className="text-xl hover:opacity-70 transition"
     style={{ color: COLORS.bronze }}
   >
     {col.title === "Follow Us" ? (
