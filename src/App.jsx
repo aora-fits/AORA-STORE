@@ -23,12 +23,12 @@ const FONTS = `
 `;
 
 const COLORS = {
-  ink: "#382615",
-  ivory: "#EFE8D6",
-  taupe: "#DCD0B4",
-  bronze: "#A47B3D",
-  wine: "#5B2A32",
-  mute: "#7A6E5A",
+  ink: "#561C24",     // deep maroon — headers, buttons, main text
+  ivory: "#E8D8C4",   // warm cream — main background
+  taupe: "#C7B7A3",   // soft sand — borders, category pills
+  bronze: "#8B4A3D",  // warm rust — prices, accents, logo (derived to bridge wine/taupe)
+  wine: "#6D2932",    // burgundy — secondary accent, wine-tone highlights
+  mute: "#8C7A6B",    // muted taupe-grey — secondary text (derived for readability)
 };
 
 const CATEGORIES = [
