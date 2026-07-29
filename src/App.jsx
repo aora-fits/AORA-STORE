@@ -26,7 +26,7 @@ const COLORS = {
   ink: "#4A0F1D",
   ivory: "#E8D8C4",
   taupe: "#C7B7A3",
-  bronze: "#230608",
+  bronze: "#E8D8C4",
   wine: "#6D2932",
   mute: "#8C7A6B",
   gold: "#230608",   // warm antique gold — for accents, borders, highlights
