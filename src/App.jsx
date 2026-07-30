@@ -1,18 +1,22 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
-import { ShoppingBag, X, Plus, Minus, Search, Menu, ChevronLeft, ChevronRight, Heart, Check, ChevronDown, Lock, Trash2, Package, Settings, Phone, Upload, Image as ImageIcon, User, MapPin, Building2, Truck } from "lucide-react";
+import { ShoppingBag, X, Plus, Minus, Search, Menu, ChevronLeft, ChevronRight, Heart, Check, ChevronDown, Lock, Trash2, Package, Settings, Phone, Upload, Image as ImageIcon, User, MapPin, Building2, Truck, LogOut, Ban, Mail, KeyRound } from "lucide-react";
 import { supabase } from "./supabaseClient";
 import { BrowserRouter, Routes, Route, useNavigate, useLocation, useParams } from "react-router-dom";
 import v1 from "./assets/v1.jfif";
 import v2 from "./assets/v2.jfif";
 import v3 from "./assets/v3.jfif";
 
-// ⚠️ تنبيه أمني: هذا الكود يعمل في الفرونت-إند (client-side)، أي شخص يفتح "View Source"
-// أو أدوات المطوّر (DevTools) يقدر يشوف هذا الرمز بسهولة. هذا لا يوفّر حماية حقيقية.
-// الحماية الفعلية للوحة التحكم لازم تكون عبر Supabase Auth (تسجيل دخول حقيقي)
-// + قواعد Row Level Security (RLS) في Supabase تمنع أي عملية كتابة/حذف على
-// جداول products و orders إلا من مستخدم مصرّح له. هذا الرمز هنا هو فقط
-// طبقة حماية بسيطة تمنع "التصفح العرضي" وليس حماية أمنية حقيقية.
-const ADMIN_PASSCODE = "230615"; // غيّريه لأي رمز تحبينه
+// ✅ لوحة التحكم أصبحت محمية بتسجيل دخول حقيقي عبر Supabase Auth (إيميل + كلمة سر)
+// بدل رمز ثابت في الكود. يجب إنشاء المستخدم/المستخدمين المسموح لهم بالدخول من
+// لوحة تحكم Supabase (Authentication > Users)، وتفعيل RLS على الجداول حسب ملف
+// supabase_security.sql المرفق، حتى تُمنع أي عملية كتابة/حذف من مستخدم غير مسجّل دخول.
+
+// رقم الهاتف الجزائري: يبدأ بـ 05 أو 06 أو 07 ويتكوّن من 10 أرقام
+const PHONE_REGEX = /^0[5-7][0-9]{8}$/;
+
+// أقل مدة (بالدقائق) يجب الانتظار قبل قبول طلب جديد بنفس رقم الهاتف
+// (حماية بسيطة من الطلبات الوهمية/المكررة)
+const ORDER_COOLDOWN_MINUTES = 10;
 
 // رقم الهاتف الموحّد للاتصال المباشر من "اتصل بنا"
 const CONTACT_PHONE = "0662617442"; // بدون مسافات، للاستخدام في رابط tel:
@@ -467,6 +471,7 @@ function ShopView({ products, activeCat, setActiveCat, setView, addToCart }) {
 // بدون المرور بصفحة /checkout أو سلة الشراء.
 function DirectOrderForm({ product, qty, selectedSize, selectedColor, recordOrder }) {
   const [form, setForm] = useState({ name: "", phone: "", wilaya: "", commune: "", address: "" });
+  const [website, setWebsite] = useState(""); // حقل honeypot مخفي لمنع البوتات
   const [deliveryType, setDeliveryType] = useState("domicile");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -535,10 +540,11 @@ function DirectOrderForm({ product, qty, selectedSize, selectedColor, recordOrde
         if (!selectedWilaya || submitting) return;
         setError("");
         setSubmitting(true);
-        const ok = await recordOrder({
+        const res = await recordOrder({
           id: Date.now(),
           date: new Date().toISOString(),
           customer: form,
+          website, // honeypot
           delivery_type: effectiveDeliveryType,
           shipping_fee: shippingFee,
           items: [{ name: product.name, qty, price: product.price, size: selectedSize, color: selectedColor }],
@@ -547,13 +553,24 @@ function DirectOrderForm({ product, qty, selectedSize, selectedColor, recordOrde
           status: "pending",
         });
         setSubmitting(false);
-        if (ok) {
+        if (res.ok) {
           setDone(true);
         } else {
-          setError("حدث خطأ أثناء إرسال الطلب. حاولي مرة أخرى من فضلك.");
+          setError(res.message || "حدث خطأ أثناء إرسال الطلب. حاولي مرة أخرى من فضلك.");
         }
       }}
     >
+      {/* حقل honeypot: مخفي عن البشر عبر CSS، البوتات فقط تعبّيه */}
+      <input
+        type="text"
+        name="website"
+        value={website}
+        onChange={(e) => setWebsite(e.target.value)}
+        tabIndex={-1}
+        autoComplete="off"
+        style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }}
+        aria-hidden="true"
+      />
       <div className="px-5 md:px-6 pt-6 pb-2 text-center border-b" style={{ borderColor: COLORS.taupe }}>
         <h2 className="text-xl md:text-2xl mb-1" style={{ fontFamily: "Fraunces, serif", color: COLORS.ink }}>
           الدفع عند الاستلام
@@ -590,7 +607,7 @@ function DirectOrderForm({ product, qty, selectedSize, selectedColor, recordOrde
             placeholder="رقم الهاتف"
             value={form.phone}
             onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })}
-            pattern="[0-9]{10}"
+            pattern="0[5-7][0-9]{8}"
             maxLength={10}
             className={inputBase}
             style={{ borderColor: COLORS.taupe, fontFamily: "Jost, sans-serif" }}
@@ -921,6 +938,7 @@ function CartDrawer({ products, open, onClose, cart, updateQty, removeItem, setV
 function CheckoutView({ products, cart, setView, clearCart, recordOrder }) {
   const [step, setStep] = useState("form");
   const [form, setForm] = useState({ name: "", phone: "", wilaya: "", commune: "", address: "" });
+  const [website, setWebsite] = useState(""); // حقل honeypot مخفي لمنع البوتات
   const [deliveryType, setDeliveryType] = useState("domicile");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -1005,10 +1023,11 @@ function CheckoutView({ products, cart, setView, clearCart, recordOrder }) {
           if (!selectedWilaya || submitting) return;
           setError("");
           setSubmitting(true);
-          const ok = await recordOrder({
+          const res = await recordOrder({
             id: Date.now(),
             date: new Date().toISOString(),
             customer: form,
+            website, // honeypot
             delivery_type: effectiveDeliveryType,
             shipping_fee: shippingFee,
             items: items.map((i) => ({ name: i.product.name, qty: i.qty, price: i.product.price, size: i.size, color: i.color })),
@@ -1017,13 +1036,24 @@ function CheckoutView({ products, cart, setView, clearCart, recordOrder }) {
             status: "pending",
           });
           setSubmitting(false);
-          if (ok) {
+          if (res.ok) {
             setStep("done");
           } else {
-            setError("حدث خطأ أثناء إرسال الطلب. حاولي مرة أخرى من فضلك.");
+            setError(res.message || "حدث خطأ أثناء إرسال الطلب. حاولي مرة أخرى من فضلك.");
           }
         }}
       >
+        {/* حقل honeypot: مخفي عن البشر عبر CSS، البوتات فقط تعبّيه */}
+        <input
+          type="text"
+          name="website"
+          value={website}
+          onChange={(e) => setWebsite(e.target.value)}
+          tabIndex={-1}
+          autoComplete="off"
+          style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }}
+          aria-hidden="true"
+        />
         <h1 className="text-2xl mb-2" style={{ fontFamily: "Fraunces, serif" }}>معلومات التوصيل</h1>
         {error && (
           <p className="text-sm px-4 py-3" style={{ backgroundColor: "#fbe3e3", color: COLORS.wine, fontFamily: "Jost, sans-serif" }}>
@@ -1044,7 +1074,7 @@ onChange={(e) =>
   })
 }
   
-  pattern="[0-9]{10}"
+  pattern="0[5-7][0-9]{8}"
   maxLength={10}
   className="border px-4 py-3 text-sm bg-white"
   style={{ borderColor: COLORS.taupe, fontFamily: "Jost, sans-serif" }}
@@ -1272,9 +1302,28 @@ function ContactView() {
   );
 }
 
-function AdminView({ products, addProduct, deleteProduct, orders, ordersLoading, updateOrderStatus, deleteOrder }) {
-  const [unlocked, setUnlocked] = useState(false);
-  const [code, setCode] = useState("");
+function AdminView({ products, addProduct, deleteProduct, orders, ordersLoading, updateOrderStatus, deleteOrder, blacklistPhone }) {
+  // ✅ الدخول للوحة التحكم أصبح عبر Supabase Auth (إيميل + كلمة سر) بدل رمز ثابت.
+  // "unlocked" الآن مبني على وجود جلسة (session) حقيقية من Supabase.
+  const [session, setSession] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [authEmail, setAuthEmail] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+  const [authError, setAuthError] = useState("");
+  const [authSubmitting, setAuthSubmitting] = useState(false);
+  const unlocked = !!session;
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data?.session || null);
+      setAuthLoading(false);
+    });
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession);
+    });
+    return () => listener?.subscription?.unsubscribe();
+  }, []);
+
   const [tab, setTab] = useState("products");
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
@@ -1350,29 +1399,77 @@ setImgPreview(imageUrls[0]);
 
   const filteredOrders = statusFilter === "all" ? orders : orders.filter((o) => (o.status || "pending") === statusFilter);
 
+  if (authLoading) {
+    return (
+      <section className="max-w-sm mx-auto px-5 py-24 text-center">
+        <p className="text-sm" style={{ color: COLORS.mute, fontFamily: "Jost, sans-serif" }}>جارٍ التحقق...</p>
+      </section>
+    );
+  }
+
   if (!unlocked) {
     return (
       <section className="max-w-sm mx-auto px-5 py-24 text-center">
         <Lock size={22} color={COLORS.bronze} className="mx-auto mb-4" />
-        <h1 className="text-xl mb-6" style={{ fontFamily: "Fraunces, serif" }}>لوحة تحكم المتجر</h1>
+        <h1 className="text-xl mb-2" style={{ fontFamily: "Fraunces, serif" }}>لوحة تحكم المتجر</h1>
+        <p className="text-xs mb-6" style={{ color: COLORS.mute, fontFamily: "Jost, sans-serif" }}>
+          الدخول محصور على الحساب المسجّل في Supabase Auth
+        </p>
+        {authError && (
+          <p className="text-sm px-4 py-3 mb-3 text-right" style={{ backgroundColor: "#fbe3e3", color: COLORS.wine, fontFamily: "Jost, sans-serif" }}>
+            {authError}
+          </p>
+        )}
         <form
-          onSubmit={(e) => {
+          onSubmit={async (e) => {
             e.preventDefault();
-            if (code === ADMIN_PASSCODE) setUnlocked(true);
-            else alert("رمز غير صحيح");
+            if (authSubmitting) return;
+            setAuthError("");
+            setAuthSubmitting(true);
+            const { data, error } = await supabase.auth.signInWithPassword({
+              email: authEmail.trim(),
+              password: authPassword,
+            });
+            setAuthSubmitting(false);
+            if (error) {
+              setAuthError("بيانات الدخول غير صحيحة.");
+              return;
+            }
+            setSession(data.session);
           }}
           className="space-y-3"
         >
-          <input
-            type="password"
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            placeholder="رمز الدخول"
-            className="w-full border px-4 py-3 text-sm text-center"
-            style={{ borderColor: COLORS.taupe, fontFamily: "Jost, sans-serif" }}
-          />
-          <button type="submit" className="w-full py-3 text-sm" style={{ backgroundColor: COLORS.ink, color: COLORS.ivory, fontFamily: "Jost, sans-serif" }}>
-            دخول
+          <div className="relative">
+            <span className="absolute inset-y-0 right-3 flex items-center pointer-events-none"><Mail size={16} color={COLORS.mute} /></span>
+            <input
+              required
+              type="email"
+              value={authEmail}
+              onChange={(e) => setAuthEmail(e.target.value)}
+              placeholder="البريد الإلكتروني"
+              className="w-full border pr-10 pl-4 py-3 text-sm"
+              style={{ borderColor: COLORS.taupe, fontFamily: "Jost, sans-serif" }}
+            />
+          </div>
+          <div className="relative">
+            <span className="absolute inset-y-0 right-3 flex items-center pointer-events-none"><KeyRound size={16} color={COLORS.mute} /></span>
+            <input
+              required
+              type="password"
+              value={authPassword}
+              onChange={(e) => setAuthPassword(e.target.value)}
+              placeholder="كلمة السر"
+              className="w-full border pr-10 pl-4 py-3 text-sm"
+              style={{ borderColor: COLORS.taupe, fontFamily: "Jost, sans-serif" }}
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={authSubmitting}
+            className="w-full py-3 text-sm"
+            style={{ backgroundColor: COLORS.ink, color: COLORS.ivory, fontFamily: "Jost, sans-serif", opacity: authSubmitting ? 0.6 : 1 }}
+          >
+            {authSubmitting ? "جارٍ الدخول..." : "دخول"}
           </button>
         </form>
       </section>
@@ -1381,9 +1478,21 @@ setImgPreview(imageUrls[0]);
 
   return (
     <section className="max-w-5xl mx-auto px-5 md:px-8 py-14">
-      <h1 className="text-2xl md:text-3xl mb-8" style={{ fontFamily: "Fraunces, serif", color: COLORS.ink }}>
-        لوحة تحكم المتجر
-      </h1>
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-2xl md:text-3xl" style={{ fontFamily: "Fraunces, serif", color: COLORS.ink }}>
+          لوحة تحكم المتجر
+        </h1>
+        <button
+          onClick={async () => {
+            await supabase.auth.signOut();
+            setSession(null);
+          }}
+          className="flex items-center gap-2 text-xs px-3 py-2 border"
+          style={{ borderColor: COLORS.taupe, color: COLORS.mute, fontFamily: "Jost, sans-serif" }}
+        >
+          <LogOut size={14} /> تسجيل الخروج
+        </button>
+      </div>
       <div className="flex gap-3 mb-8 border-b" style={{ borderColor: COLORS.taupe }}>
         <button
           onClick={() => setTab("products")}
@@ -1634,8 +1743,22 @@ setImgPreview(imageUrls[0]);
                           {currentStatus.label}
                         </span>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-3">
                         <span style={{ color: COLORS.bronze }}>{formatPrice(o.total)}</span>
+                        <button
+                          onClick={async () => {
+                            if (!o.customer?.phone) return;
+                            if (window.confirm(`هل تريدين حظر الرقم ${o.customer.phone} من إرسال طلبات جديدة؟`)) {
+                              const res = await blacklistPhone(o.customer.phone, "طلب وهمي/مشبوه");
+                              if (res.ok) alert("تم حظر الرقم بنجاح.");
+                              else alert("تعذر حظر الرقم: " + (res.message || "خطأ غير معروف"));
+                            }
+                          }}
+                          aria-label="حظر رقم الهاتف"
+                          title="حظر رقم الهاتف"
+                        >
+                          <Ban size={16} color={COLORS.wine} />
+                        </button>
                         <button
                           onClick={async () => {
                             if (window.confirm("هل تريدين حذف هذه الطلبية نهائيًا؟")) {
@@ -1791,19 +1914,82 @@ function AppContent() {
     }
   };
 
+  // recordOrder يرجع دائمًا { ok, message } بدل true/false فقط، حتى تقدر
+  // نماذج الطلب تعرض سبب الرفض (رقم محظور، طلب مكرر، رقم غير صحيح...).
   const recordOrder = async (order) => {
     try {
-      const { id, ...orderData } = order;
+      const { id, website, ...orderData } = order;
+
+      // 1) Honeypot: حقل مخفي، البشر ما يعبّونه أبدًا. لو معبّى، غالبًا بوت.
+      // نتظاهر بالنجاح بدون أي حفظ فعلي حتى ما يكتشف البوت إنه انكشف.
+      if (website) {
+        return { ok: true, honeypot: true };
+      }
+
+      const phone = orderData?.customer?.phone || "";
+      if (!PHONE_REGEX.test(phone)) {
+        return { ok: false, message: "رقم الهاتف غير صحيح. يجب أن يبدأ بـ 05 أو 06 أو 07 ويتكون من 10 أرقام." };
+      }
+
+      // 2) التحقق من القائمة السوداء
+      const { data: blacklisted, error: blacklistError } = await supabase
+        .from("blacklisted_phones")
+        .select("phone")
+        .eq("phone", phone)
+        .maybeSingle();
+      if (blacklistError && blacklistError.code !== "PGRST116") {
+        console.warn("تعذر التحقق من القائمة السوداء:", blacklistError.message);
+      }
+      if (blacklisted) {
+        return { ok: false, message: "تعذر إتمام الطلب. يرجى التواصل معنا مباشرة عبر الهاتف." };
+      }
+
+      // 3) منع الطلبات المكررة بنفس الرقم خلال فترة قصيرة
+      const { data: recentOrders, error: recentError } = await supabase
+        .from("orders")
+        .select("id, date")
+        .eq("customer->>phone", phone)
+        .order("date", { ascending: false })
+        .limit(1);
+      if (recentError) {
+        console.warn("تعذر التحقق من الطلبات الأخيرة:", recentError.message);
+      }
+      if (recentOrders && recentOrders.length > 0) {
+        const lastOrderDate = new Date(recentOrders[0].date);
+        const minutesSince = (Date.now() - lastOrderDate.getTime()) / 60000;
+        if (minutesSince < ORDER_COOLDOWN_MINUTES) {
+          return {
+            ok: false,
+            message: `لديك طلب مُرسل مؤخرًا. يرجى الانتظار ${Math.ceil(ORDER_COOLDOWN_MINUTES - minutesSince)} دقيقة قبل إرسال طلب جديد، أو اتصلي بنا مباشرة لتأكيد طلبك.`,
+          };
+        }
+      }
+
       const { error } = await supabase.from("orders").insert([orderData]);
       if (error) {
         console.error("تعذر حفظ الطلبية:", error.message);
-        return false;
+        return { ok: false, message: "حدث خطأ أثناء إرسال الطلب. حاولي مرة أخرى من فضلك." };
       }
       clearCart();
-      return true;
+      return { ok: true };
     } catch (err) {
       console.error("تعذر حفظ الطلبية:", err);
-      return false;
+      return { ok: false, message: "حدث خطأ غير متوقع. حاولي مرة أخرى من فضلك." };
+    }
+  };
+
+  // يضيف رقم هاتف للقائمة السوداء (يُستخدم من لوحة التحكم عند رصد طلب وهمي)
+  const blacklistPhone = async (phone, reason = "") => {
+    try {
+      const { error } = await supabase.from("blacklisted_phones").insert([{ phone, reason }]);
+      if (error) {
+        console.error("تعذر حظر الرقم:", error.message);
+        return { ok: false, message: error.message };
+      }
+      return { ok: true };
+    } catch (err) {
+      console.error("تعذر حظر الرقم:", err);
+      return { ok: false, message: String(err) };
     }
   };
 
@@ -1857,7 +2043,7 @@ function AppContent() {
           <Route path="/returns" element={<ReturnsView />} />
           <Route path="/faq" element={<FaqView />} />
           <Route path="/contact" element={<ContactView />} />
-          <Route path="/admin" element={<AdminView products={products} addProduct={addProduct} deleteProduct={deleteProduct} orders={orders} ordersLoading={ordersLoading} updateOrderStatus={updateOrderStatus} deleteOrder={deleteOrder} />} />
+          <Route path="/admin" element={<AdminView products={products} addProduct={addProduct} deleteProduct={deleteProduct} orders={orders} ordersLoading={ordersLoading} updateOrderStatus={updateOrderStatus} deleteOrder={deleteOrder} blacklistPhone={blacklistPhone} />} />
           <Route path="*" element={<HomeView products={products} setView={setView} setActiveCat={setActiveCat} addToCart={addToCart} />} />
         </Routes>
       )}
