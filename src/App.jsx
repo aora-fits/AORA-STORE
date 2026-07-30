@@ -741,10 +741,12 @@ function ProductView({ product, setView, addToCart, recordOrder }) {
        )}
      </div>
 
-<div className="px-6 md:px-0 pt-8 md:pt-0">
-          <p className="text-xs tracking-[0.2em] mb-3" style={{ color: COLORS.bronze, fontFamily: "Jost, sans-serif" }}>
-            {CATEGORIES.find((c) => c.id === product.cat)?.label}
-          </p>
+<div className="px-6 md:px-0">
+          {CATEGORIES.find((c) => c.id === product.cat)?.label && (
+            <p className="text-xs tracking-[0.2em] mb-3" style={{ color: COLORS.bronze, fontFamily: "Jost, sans-serif" }}>
+              {CATEGORIES.find((c) => c.id === product.cat)?.label}
+            </p>
+          )}
           <h1 className="text-3xl md:text-4xl mb-4" style={{ fontFamily: "Fraunces, serif", color: COLORS.ink }}>
             {product.name}
           </h1>
