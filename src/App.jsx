@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
-import { ShoppingBag, X, Plus, Minus, Search, Menu, ChevronLeft, ChevronRight, Heart, Check, ChevronDown, Lock, Trash2, Package, Settings, Phone, Upload, Image as ImageIcon } from "lucide-react";
+import { ShoppingBag, X, Plus, Minus, Search, Menu, ChevronLeft, ChevronRight, Heart, Check, ChevronDown, Lock, Trash2, Package, Settings, Phone, Upload, Image as ImageIcon, User, MapPin, Building2, Truck } from "lucide-react";
 import { supabase } from "./supabaseClient";
 import { BrowserRouter, Routes, Route, useNavigate, useLocation, useParams } from "react-router-dom";
 import v1 from "./assets/v1.jfif";
@@ -460,9 +460,244 @@ function ShopView({ products, activeCat, setActiveCat, setView, addToCart }) {
   );
 }
 
-function ProductView({ product, setView, addToCart }) {
-  const [qty, setQty] = useState(1);
-  const [added, setAdded] = useState(false);
+// ---------- نموذج الطلب المباشر (Landing Page) ----------
+// نموذج طلب كامل مدمج داخل صفحة المنتج نفسها، بتصميم "لاندينغ بايج" مباشر:
+// حقول مع أيقونات، ولاية وبلدية، ثم ملخص الطلب (المجموع الجزئي + التوصيل + الإجمالي)
+// وزر واحد لتأكيد الطلب بالدفع عند الاستلام. يُرسل الطلب مباشرة عبر recordOrder
+// بدون المرور بصفحة /checkout أو سلة الشراء.
+function DirectOrderForm({ product, qty, selectedSize, selectedColor, recordOrder }) {
+  const [form, setForm] = useState({ name: "", phone: "", wilaya: "", commune: "", address: "" });
+  const [deliveryType, setDeliveryType] = useState("domicile");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const [done, setDone] = useState(false);
+
+  const selectedWilaya = WILAYAS.find((w) => w.name === form.wilaya);
+  const domicileAvailable = selectedWilaya ? selectedWilaya.domicile > 0 : true;
+  const stopdeskAvailable = selectedWilaya ? selectedWilaya.stopdesk > 0 : true;
+
+  const effectiveDeliveryType =
+    deliveryType === "domicile" && !domicileAvailable && stopdeskAvailable
+      ? "stopdesk"
+      : deliveryType === "stopdesk" && !stopdeskAvailable && domicileAvailable
+      ? "domicile"
+      : deliveryType;
+
+  const shippingFee = selectedWilaya
+    ? (effectiveDeliveryType === "domicile" ? selectedWilaya.domicile : selectedWilaya.stopdesk)
+    : 0;
+  const subtotal = product.price * qty;
+  const total = subtotal + shippingFee;
+
+  useEffect(() => {
+    if (!selectedWilaya) return;
+    if (deliveryType === "domicile" && !domicileAvailable && stopdeskAvailable) {
+      setDeliveryType("stopdesk");
+    } else if (deliveryType === "stopdesk" && !stopdeskAvailable && domicileAvailable) {
+      setDeliveryType("domicile");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.wilaya]);
+
+  const inputWrap = "relative";
+  const inputIcon = "absolute inset-y-0 right-3 flex items-center pointer-events-none";
+  const inputBase = "w-full border pr-10 pl-4 py-3.5 text-sm bg-white outline-none transition-colors focus:border-current";
+
+  if (done) {
+    return (
+      <div className="border p-8 text-center" style={{ borderColor: COLORS.taupe, backgroundColor: "#fff" }}>
+        <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-6" style={{ backgroundColor: COLORS.bronze }}>
+          <Check size={24} color={COLORS.ink} />
+        </div>
+        <h2 className="text-2xl mb-3" style={{ fontFamily: "Fraunces, serif" }}>تم استلام طلبك</h2>
+        <p className="text-sm" style={{ color: COLORS.mute, fontFamily: "Jost, sans-serif" }}>
+          شكرًا لثقتك بـ AORA، سنتصل بك قريبًا لتأكيد الطلب.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <form
+      id="order-form"
+      className="border overflow-hidden"
+      style={{ borderColor: COLORS.taupe, backgroundColor: "#fff" }}
+      onSubmit={async (e) => {
+        e.preventDefault();
+        if (!selectedSize) {
+          alert("يرجى اختيار المقاس أولاً");
+          return;
+        }
+        if (!selectedColor) {
+          alert("يرجى اختيار اللون أولاً");
+          return;
+        }
+        if (!selectedWilaya || submitting) return;
+        setError("");
+        setSubmitting(true);
+        const ok = await recordOrder({
+          id: Date.now(),
+          date: new Date().toISOString(),
+          customer: form,
+          delivery_type: effectiveDeliveryType,
+          shipping_fee: shippingFee,
+          items: [{ name: product.name, qty, price: product.price, size: selectedSize, color: selectedColor }],
+          subtotal,
+          total,
+          status: "pending",
+        });
+        setSubmitting(false);
+        if (ok) {
+          setDone(true);
+        } else {
+          setError("حدث خطأ أثناء إرسال الطلب. حاولي مرة أخرى من فضلك.");
+        }
+      }}
+    >
+      <div className="px-5 md:px-6 pt-6 pb-2 text-center border-b" style={{ borderColor: COLORS.taupe }}>
+        <h2 className="text-xl md:text-2xl mb-1" style={{ fontFamily: "Fraunces, serif", color: COLORS.ink }}>
+          الدفع عند الاستلام
+        </h2>
+        <p className="text-xs pb-4" style={{ color: COLORS.mute, fontFamily: "Jost, sans-serif" }}>
+          املئي معلوماتك وسنتصل بك لتأكيد الطلب
+        </p>
+      </div>
+
+      <div className="p-5 md:p-6 space-y-4">
+        {error && (
+          <p className="text-sm px-4 py-3" style={{ backgroundColor: "#fbe3e3", color: COLORS.wine, fontFamily: "Jost, sans-serif" }}>
+            {error}
+          </p>
+        )}
+
+        <div className={inputWrap}>
+          <span className={inputIcon}><User size={16} color={COLORS.mute} /></span>
+          <input
+            required
+            placeholder="الاسم الكامل"
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            className={inputBase}
+            style={{ borderColor: COLORS.taupe, fontFamily: "Jost, sans-serif" }}
+          />
+        </div>
+
+        <div className={inputWrap}>
+          <span className={inputIcon}><Phone size={16} color={COLORS.mute} /></span>
+          <input
+            required
+            type="tel"
+            placeholder="رقم الهاتف"
+            value={form.phone}
+            onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })}
+            pattern="[0-9]{10}"
+            maxLength={10}
+            className={inputBase}
+            style={{ borderColor: COLORS.taupe, fontFamily: "Jost, sans-serif" }}
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className={inputWrap}>
+            <span className={inputIcon}><MapPin size={16} color={COLORS.mute} /></span>
+            <select
+              required
+              value={form.wilaya}
+              onChange={(e) => setForm({ ...form, wilaya: e.target.value })}
+              className={`${inputBase} appearance-none`}
+              style={{ borderColor: COLORS.taupe, fontFamily: "Jost, sans-serif" }}
+            >
+              <option value="">الولاية</option>
+              {WILAYAS.map((w) => (
+                <option key={w.name} value={w.name} disabled={w.domicile === 0 && w.stopdesk === 0}>
+                  {w.name}{w.domicile === 0 && w.stopdesk === 0 ? " (غير متوفرة)" : ""}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className={inputWrap}>
+            <span className={inputIcon}><Building2 size={16} color={COLORS.mute} /></span>
+            <input
+              required
+              placeholder="البلدية"
+              value={form.commune}
+              onChange={(e) => setForm({ ...form, commune: e.target.value })}
+              className={inputBase}
+              style={{ borderColor: COLORS.taupe, fontFamily: "Jost, sans-serif" }}
+            />
+          </div>
+        </div>
+
+        <div className={inputWrap}>
+          <span className={inputIcon}><MapPin size={16} color={COLORS.mute} /></span>
+          <input
+            required
+            placeholder="العنوان الكامل"
+            value={form.address}
+            onChange={(e) => setForm({ ...form, address: e.target.value })}
+            className={inputBase}
+            style={{ borderColor: COLORS.taupe, fontFamily: "Jost, sans-serif" }}
+          />
+        </div>
+
+        {selectedWilaya && (
+          <div className="space-y-2 text-sm" style={{ fontFamily: "Jost, sans-serif" }}>
+            <label
+              className="flex items-center justify-between gap-3 border p-3"
+              style={{ borderColor: COLORS.taupe, opacity: domicileAvailable ? 1 : 0.4, cursor: domicileAvailable ? "pointer" : "not-allowed" }}
+            >
+              <span className="flex items-center gap-3">
+                <input type="radio" name="delivery" checked={effectiveDeliveryType === "domicile"} disabled={!domicileAvailable} onChange={() => setDeliveryType("domicile")} />
+                التوصيل إلى المنزل
+              </span>
+              <span style={{ color: COLORS.bronze }}>{domicileAvailable ? formatPrice(selectedWilaya.domicile) : "غير متوفر"}</span>
+            </label>
+            <label
+              className="flex items-center justify-between gap-3 border p-3"
+              style={{ borderColor: COLORS.taupe, opacity: stopdeskAvailable ? 1 : 0.4, cursor: stopdeskAvailable ? "pointer" : "not-allowed" }}
+            >
+              <span className="flex items-center gap-3">
+                <input type="radio" name="delivery" checked={effectiveDeliveryType === "stopdesk"} disabled={!stopdeskAvailable} onChange={() => setDeliveryType("stopdesk")} />
+                الاستلام من مكتب التوصيل
+              </span>
+              <span style={{ color: COLORS.bronze }}>{stopdeskAvailable ? formatPrice(selectedWilaya.stopdesk) : "غير متوفر"}</span>
+            </label>
+          </div>
+        )}
+      </div>
+
+      <div className="px-5 md:px-6 py-4 space-y-2 text-sm border-t" style={{ borderColor: COLORS.taupe, backgroundColor: COLORS.ivory, fontFamily: "Jost, sans-serif" }}>
+        <div className="flex items-center justify-between" style={{ color: COLORS.mute }}>
+          <span className="flex items-center gap-2"><ShoppingBag size={14} /> المجموع الجزئي</span>
+          <span>{formatPrice(subtotal)}</span>
+        </div>
+        <div className="flex items-center justify-between" style={{ color: COLORS.mute }}>
+          <span className="flex items-center gap-2"><Truck size={14} /> التوصيل</span>
+          <span>{selectedWilaya ? formatPrice(shippingFee) : "—"}</span>
+        </div>
+        <div className="flex items-center justify-between text-base pt-2 border-t" style={{ borderColor: COLORS.taupe }}>
+          <span>الإجمالي</span>
+          <span style={{ color: COLORS.wine }}>{formatPrice(total)}</span>
+        </div>
+      </div>
+
+      <div className="p-5 md:p-6 pt-0">
+        <button
+          type="submit"
+          disabled={!selectedWilaya || (!domicileAvailable && !stopdeskAvailable) || submitting}
+          className="w-full py-4 text-sm tracking-wide flex items-center justify-center gap-2"
+          style={{ backgroundColor: COLORS.ink, color: COLORS.ivory, fontFamily: "Jost, sans-serif", opacity: !selectedWilaya || submitting ? 0.5 : 1 }}
+        >
+          <ShoppingBag size={16} />
+          {submitting ? "جارٍ الإرسال..." : `اطلب الآن — ${formatPrice(total)}`}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+function ProductView({ product, setView, addToCart, recordOrder }) {
+  const qty = 1;
   const [selectedSize, setSelectedSize] = useState("");
   const [selectedColor, setSelectedColor] = useState("");
   const [selectedImage, setSelectedImage] = useState(product.images?.[0] || product.img);
@@ -484,40 +719,27 @@ function ProductView({ product, setView, addToCart }) {
         <ChevronRight size={16} /> Return to Shop
       </button>
    <div className="grid md:grid-cols-2 gap-6 md:gap-8">
+     <div>
        <img
-
-  src={selectedImage}
-
-  alt={product.name}
-
-  className="w-full object-cover"
-style={{ aspectRatio: "4/5" }}
-/>
-
-</div>
-{Array.isArray(product.images) && product.images.length > 1 && (
-
-  <div className="flex gap-2 mt-3 flex-wrap">
-
-    {product.images.map((image, index) => (
-
-      <img
-
-        key={index}
-
-        src={image}
-
-        alt={`${product.name}-${index}`}
-onClick={() => setSelectedImage(image)}
-        className="w-20 h-24 object-cover rounded border cursor-pointer transition-transform hover:scale-105"
-
-      />
-
-    ))}
-
-  </div>
-
-)}
+         src={selectedImage}
+         alt={product.name}
+         className="w-full object-cover"
+         style={{ aspectRatio: "4/5" }}
+       />
+       {Array.isArray(product.images) && product.images.length > 1 && (
+         <div className="flex gap-2 mt-3 flex-wrap">
+           {product.images.map((image, index) => (
+             <img
+               key={index}
+               src={image}
+               alt={`${product.name}-${index}`}
+               onClick={() => setSelectedImage(image)}
+               className="w-20 h-24 object-cover rounded border cursor-pointer transition-transform hover:scale-105"
+             />
+           ))}
+         </div>
+       )}
+     </div>
 
 <div className="px-6 md:px-0 pt-8 md:pt-0">
           <p className="text-xs tracking-[0.2em] mb-3" style={{ color: COLORS.bronze, fontFamily: "Jost, sans-serif" }}>
@@ -560,7 +782,7 @@ onClick={() => setSelectedImage(image)}
 ))}
   </div>
 </div>
-<div className="mb-6">
+<div className="mb-8">
   <p className="text-sm mb-2">Color</p>
 
   <div className="flex gap-3 flex-wrap">
@@ -582,73 +804,18 @@ onClick={() => setSelectedImage(image)}
     ))}
   </div>
 </div>
-          <div className="flex items-center gap-4 mb-8">
-            <div className="flex items-center border" style={{ borderColor: COLORS.taupe }}>
-              <button onClick={() => setQty((q) => Math.max(1, q - 1))} className="p-3" aria-label="إنقاص الكمية">
-                <Minus size={14} />
-              </button>
-              <span className="w-8 text-center text-sm">{qty}</span>
-              <button onClick={() => setQty((q) => q + 1)} className="p-3" aria-label="زيادة الكمية">
-                <Plus size={14} />
-              </button>
-            </div>
-            <div className="flex gap-3 w-full">
-            <button
-             onClick={() => {
-    if (!selectedSize) {
-        alert("يرجى اختيار المقاس");
-        return;
-    }
-    if (!selectedColor) {
-  alert("يرجى اختيار اللون");
-  return;
-}
-
-    addToCart(product.id, qty, selectedSize, selectedColor);
-    setAdded(true);
-    setTimeout(() => setAdded(false), 1800);
-}}
-              className="px-5 py-3.5 text-sm tracking-wide flex items-center justify-center gap-2 transition-colors"
-              style={{ backgroundColor: added ? "#3d6b4f" : COLORS.ink, color: COLORS.ivory, fontFamily: "Jost, sans-serif" }}
-            >
-              {added ? (
-                <>
-                  <Check size={16} /> Added to Bag
-                </>
-              ) : (
-                "Add to Bag"
-              )}
-            </button>
-            <button
-  onClick={() => {
-    if (!selectedSize) {
-      alert("يرجى اختيار المقاس");
-      return;
-    }
-    if (!selectedColor) {
-  alert("يرجى اختيار اللون");
-  return;
-}
-
-    addToCart(product.id, qty, selectedSize, selectedColor);
-    setView("checkout");
-  }}
-  className="flex-1 py-3.5 text-sm border"
-style={{
-  backgroundColor: COLORS.ink,
-  color: COLORS.ivory,
-  borderColor: COLORS.ink,
-  fontFamily: "Jost, sans-serif",
-}}
->
-  Buy Now
-</button>
-</div>
-
-          <div className="text-xs space-y-1" style={{ color: COLORS.mute, fontFamily: "Jost, sans-serif" }}>
-         
-          </div>
         </div>
+      </div>
+      {/* end grid */}
+
+      <div className="max-w-xl mx-auto mt-14">
+        <DirectOrderForm
+          product={product}
+          qty={qty}
+          selectedSize={selectedSize}
+          selectedColor={selectedColor}
+          recordOrder={recordOrder}
+        />
       </div>
     </section>
   );
@@ -656,12 +823,12 @@ style={{
 
 // Route wrapper: يقرأ اسم المنتج (على شكل slug) من الرابط (URL) مباشرة
 // مثال: /product/فستان-الصيف
-function ProductRoute({ products, addToCart, setView }) {
+function ProductRoute({ products, addToCart, setView, recordOrder }) {
   const { id: slug } = useParams();
   const product =
     products.find((p) => slugify(p.name) === slug) ||
     products.find((p) => String(p.id) === String(slug)); // احتياط للروابط القديمة بالأرقام
-  return <ProductView product={product} setView={setView} addToCart={addToCart} />;
+  return <ProductView product={product} setView={setView} addToCart={addToCart} recordOrder={recordOrder} />;
 }
 
 function CartDrawer({ products, open, onClose, cart, updateQty, removeItem, setView }) {
@@ -1680,7 +1847,7 @@ function AppContent() {
         <Routes>
           <Route path="/" element={<HomeView products={products} setView={setView} setActiveCat={setActiveCat} addToCart={addToCart} />} />
           <Route path="/shop" element={<ShopView products={products} activeCat={activeCat} setActiveCat={setActiveCat} setView={setView} addToCart={addToCart} />} />
-          <Route path="/product/:id" element={<ProductRoute products={products} addToCart={addToCart} setView={setView} />} />
+          <Route path="/product/:id" element={<ProductRoute products={products} addToCart={addToCart} setView={setView} recordOrder={recordOrder} />} />
           <Route path="/checkout" element={<CheckoutView products={products} cart={cart} setView={setView} clearCart={clearCart} recordOrder={recordOrder} />} />
           <Route path="/about" element={<AboutView />} />
           <Route path="/customer-care" element={<CustomerCareView />} />
