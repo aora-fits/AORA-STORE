@@ -30,9 +30,13 @@ const COLORS = {
   ink: "#4A0F1D",
   ivory: "#E8D8C4",
   taupe: "#C7B7A3",
-  bronze: "#E8D8C4",
+  // ⚠️ إصلاح مشكلة تباين (contrast) رصدتها PageSpeed/Accessibility:
+  // "bronze" كانت مطابقة تمامًا للون "ivory"، فأي نص بلون bronze فوق خلفية
+  // ivory/أبيض كان عمليًا غير مرئي (تباين شبه معدوم). الآن فصلناها لدرجتين:
+  bronze: "#C9A868",      // ذهبي فاتح — يُستخدم فوق خلفيات داكنة (ink) أو كخلفية عناصر
+  bronzeDark: "#7A5A22",  // برونزي غامق — يُستخدم كنص فوق خلفيات فاتحة (ivory/أبيض)
   wine: "#6D2932",
-  mute: "#8C7A6B",
+  mute: "#63513F",        // تم تغميقه لتحسين التباين فوق خلفية ivory الفاتحة (نسبة تباين ~5.4:1)
   gold: "#230608",   // warm antique gold — for accents, borders, highlights
 };
 const CATEGORIES = [
@@ -116,6 +120,51 @@ function formatPrice(n) {
   return n.toLocaleString("ar-DZ") + " د.ج";
 }
 
+// ✅ ضغط/تصغير الصور في المتصفح قبل رفعها لـ Supabase Storage.
+// هذا يقلل بشكل كبير من حجم الصور المخزّنة (وبالتالي حجم الصفحة عند كل زيارة)،
+// وهو مصدر رئيسي لمشكلة "Improve image delivery" و"Avoid enormous network payloads"
+// اللي ظهرت في تقرير PageSpeed. يحوّل أي صورة لـ JPEG بحد أقصى 1600px ونسبة جودة 0.82.
+function compressImage(file, maxDimension = 1600, quality = 0.82) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      let { width, height } = img;
+      if (width > maxDimension || height > maxDimension) {
+        if (width >= height) {
+          height = Math.round((height * maxDimension) / width);
+          width = maxDimension;
+        } else {
+          width = Math.round((width * maxDimension) / height);
+          height = maxDimension;
+        }
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, width, height);
+      URL.revokeObjectURL(objectUrl);
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            reject(new Error("تعذر ضغط الصورة"));
+            return;
+          }
+          resolve(blob);
+        },
+        "image/jpeg",
+        quality
+      );
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("تعذر قراءة الصورة"));
+    };
+    img.src = objectUrl;
+  });
+}
+
 // يحوّل اسم المنتج إلى رابط (slug) صالح للاستخدام في الـ URL
 // يدعم الحروف العربية والإنجليزية، ويستبدل المسافات والرموز بشرطة "-"
 function slugify(str) {
@@ -167,7 +216,7 @@ function Logo({ size = "text-2xl", dark }) {
   style={{
     fontFamily: "Fraunces, serif",
     letterSpacing: "0.08em",
-    color: COLORS.bronze,
+    color: dark ? COLORS.bronze : COLORS.bronzeDark,
   }}
 >
   AORA
@@ -197,7 +246,7 @@ function TopBar({ view, setView, cartCount, setCartOpen, menuOpen, setMenuOpen }
               className="text-sm tracking-wide pb-1 border-b-2 transition-colors"
               style={{
                 color: view === n.id ? COLORS.ink : COLORS.mute,
-                borderColor: view === n.id ? COLORS.bronze : "transparent",
+                borderColor: view === n.id ? COLORS.bronzeDark : "transparent",
               }}
             >
               {n.label}
@@ -229,7 +278,7 @@ function TopBar({ view, setView, cartCount, setCartOpen, menuOpen, setMenuOpen }
                 setMenuOpen(false);
               }}
               className="text-right text-xl py-1"
-              style={{ color: view === n.id ? COLORS.bronze : COLORS.ink }}
+              style={{ color: view === n.id ? COLORS.bronzeDark : COLORS.ink }}
             >
               {n.label}
             </button>
@@ -258,6 +307,7 @@ function Hero({ setView }) {
   loop
   muted
   playsInline
+  preload="metadata"
   className="w-full h-[520px] object-cover"
 >
   <source src="/videos/hero.mp4" type="video/mp4" />
@@ -280,7 +330,7 @@ function ProductCard({ p, setView, addToCart }) {
         className="block w-full relative overflow-hidden mb-3"
         style={{ aspectRatio: "4/5" }}
       >
-        <img src={p.img} alt={p.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+        <img src={p.img} alt={p.name} loading="lazy" decoding="async" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
         <span
           className="absolute top-3 left-3 w-8 h-8 rounded-full flex items-center justify-center bg-white/80 opacity-0 group-hover:opacity-100 transition-opacity"
           aria-hidden
@@ -297,7 +347,7 @@ function ProductCard({ p, setView, addToCart }) {
           >
             {p.name}
           </button>
-          <p className="text-xl mt-1" style={{ color: COLORS.bronze, fontFamily: "Jost, sans-serif" }}>
+          <p className="text-xl mt-1" style={{ color: COLORS.bronzeDark, fontFamily: "Jost, sans-serif" }}>
             {formatPrice(p.price)}
           </p>
         </div>
@@ -363,6 +413,7 @@ function Footer({ setView }) {
     ? `tel:${CONTACT_PHONE}`
     : "#"
 }
+    aria-label={col.title === "Follow Us" ? it : undefined}
     onClick={(e) => {
   if (col.title !== "Follow Us" && it !== "Contact Us") {
     e.preventDefault();
@@ -383,11 +434,11 @@ function Footer({ setView }) {
   >
     {col.title === "Follow Us" ? (
   it === "Instagram" ? (
-    <i className="fab fa-instagram text-xl"></i>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.2c3.2 0 3.6 0 4.85.07 1.17.05 2.1.25 2.85.53a5.7 5.7 0 0 1 2.07 1.35 5.7 5.7 0 0 1 1.35 2.07c.28.75.48 1.68.53 2.85.06 1.25.07 1.65.07 4.85s0 3.6-.07 4.85c-.05 1.17-.25 2.1-.53 2.85a5.7 5.7 0 0 1-1.35 2.07 5.7 5.7 0 0 1-2.07 1.35c-.75.28-1.68.48-2.85.53-1.25.06-1.65.07-4.85.07s-3.6 0-4.85-.07c-1.17-.05-2.1-.25-2.85-.53a5.7 5.7 0 0 1-2.07-1.35 5.7 5.7 0 0 1-1.35-2.07c-.28-.75-.48-1.68-.53-2.85C2.2 15.6 2.2 15.2 2.2 12s0-3.6.07-4.85c.05-1.17.25-2.1.53-2.85A5.7 5.7 0 0 1 4.15 2.23 5.7 5.7 0 0 1 6.22.88c.75-.28 1.68-.48 2.85-.53C10.32 2.2 10.72 2.2 12 2.2Zm0 1.98c-3.14 0-3.5 0-4.74.07-.96.04-1.48.2-1.83.34-.46.18-.79.4-1.13.74-.34.34-.56.67-.74 1.13-.14.35-.3.87-.34 1.83-.07 1.24-.07 1.6-.07 4.74s0 3.5.07 4.74c.04.96.2 1.48.34 1.83.18.46.4.79.74 1.13.34.34.67.56 1.13.74.35.14.87.3 1.83.34 1.24.07 1.6.07 4.74.07s3.5 0 4.74-.07c.96-.04 1.48-.2 1.83-.34.46-.18.79-.4 1.13-.74.34-.34.56-.67.74-1.13.14-.35.3-.87.34-1.83.07-1.24.07-1.6.07-4.74s0-3.5-.07-4.74c-.04-.96-.2-1.48-.34-1.83a3.04 3.04 0 0 0-.74-1.13 3.04 3.04 0 0 0-1.13-.74c-.35-.14-.87-.3-1.83-.34-1.24-.07-1.6-.07-4.74-.07Zm0 3.37a5.45 5.45 0 1 1 0 10.9 5.45 5.45 0 0 1 0-10.9Zm0 1.98a3.47 3.47 0 1 0 0 6.94 3.47 3.47 0 0 0 0-6.94Zm5.66-2.2a1.27 1.27 0 1 1-2.55 0 1.27 1.27 0 0 1 2.55 0Z"/></svg>
   ) : it === "Facebook" ? (
-    <i className="fab fa-facebook-f text-xl"></i>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M22 12.06C22 6.51 17.52 2 12 2S2 6.51 2 12.06c0 5 3.66 9.15 8.44 9.94v-7.03H7.9v-2.9h2.54V9.85c0-2.5 1.49-3.89 3.77-3.89 1.09 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56v1.88h2.78l-.44 2.9h-2.34V22c4.78-.79 8.44-4.94 8.44-9.94Z"/></svg>
   ) : (
-    <i className="fab fa-tiktok text-xl"></i>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.6 2h-3.2v13.9c0 1.5-1.2 2.7-2.7 2.7a2.7 2.7 0 0 1-2.7-2.7 2.7 2.7 0 0 1 2.7-2.7c.28 0 .55.04.8.12V10.1a5.9 5.9 0 0 0-.8-.06 5.9 5.9 0 0 0-5.9 5.9A5.9 5.9 0 0 0 10.7 21.8a5.9 5.9 0 0 0 5.9-5.9V8.4a8.3 8.3 0 0 0 4.8 1.53V6.7a5.1 5.1 0 0 1-4.8-4.7Z"/></svg>
   )
 ) : (
   it
@@ -667,7 +718,7 @@ function DirectOrderForm({ product, qty, selectedSize, selectedColor, recordOrde
                 <input type="radio" name="delivery" checked={effectiveDeliveryType === "domicile"} disabled={!domicileAvailable} onChange={() => setDeliveryType("domicile")} />
                 التوصيل إلى المنزل
               </span>
-              <span style={{ color: COLORS.bronze }}>{domicileAvailable ? formatPrice(selectedWilaya.domicile) : "غير متوفر"}</span>
+              <span style={{ color: COLORS.bronzeDark }}>{domicileAvailable ? formatPrice(selectedWilaya.domicile) : "غير متوفر"}</span>
             </label>
             <label
               className="flex items-center justify-between gap-3 border p-3"
@@ -677,7 +728,7 @@ function DirectOrderForm({ product, qty, selectedSize, selectedColor, recordOrde
                 <input type="radio" name="delivery" checked={effectiveDeliveryType === "stopdesk"} disabled={!stopdeskAvailable} onChange={() => setDeliveryType("stopdesk")} />
                 الاستلام من مكتب التوصيل
               </span>
-              <span style={{ color: COLORS.bronze }}>{stopdeskAvailable ? formatPrice(selectedWilaya.stopdesk) : "غير متوفر"}</span>
+              <span style={{ color: COLORS.bronzeDark }}>{stopdeskAvailable ? formatPrice(selectedWilaya.stopdesk) : "غير متوفر"}</span>
             </label>
           </div>
         )}
@@ -740,6 +791,9 @@ function ProductView({ product, setView, addToCart, recordOrder }) {
        <img
          src={selectedImage}
          alt={product.name}
+         fetchpriority="high"
+         loading="eager"
+         decoding="async"
          className="w-full object-cover"
          style={{ aspectRatio: "4/5" }}
        />
@@ -750,6 +804,8 @@ function ProductView({ product, setView, addToCart, recordOrder }) {
                key={index}
                src={image}
                alt={`${product.name}-${index}`}
+               loading="lazy"
+               decoding="async"
                onClick={() => setSelectedImage(image)}
                className="w-20 h-24 object-cover rounded border cursor-pointer transition-transform hover:scale-105"
              />
@@ -760,7 +816,7 @@ function ProductView({ product, setView, addToCart, recordOrder }) {
 
 <div className="px-6 md:px-0">
           {CATEGORIES.find((c) => c.id === product.cat)?.label && (
-            <p className="text-xs tracking-[0.2em] mb-3" style={{ color: COLORS.bronze, fontFamily: "Jost, sans-serif" }}>
+            <p className="text-xs tracking-[0.2em] mb-3" style={{ color: COLORS.bronzeDark, fontFamily: "Jost, sans-serif" }}>
               {CATEGORIES.find((c) => c.id === product.cat)?.label}
             </p>
           )}
@@ -878,7 +934,7 @@ function CartDrawer({ products, open, onClose, cart, updateQty, removeItem, setV
           )}
           {items.map((i) => (
             <div key={`${i.id}-${i.size ?? "nosize"}-${i.color ?? "nocolor"}`} className="flex gap-4 py-4 border-b" style={{ borderColor: COLORS.taupe }}>
-              <img src={i.product.img} alt="" className="w-20 h-24 object-cover shrink-0" />
+              <img src={i.product.img} alt="" loading="lazy" decoding="async" className="w-20 h-24 object-cover shrink-0" />
               <div className="flex-1 flex flex-col justify-between">
                 <div className="flex justify-between gap-2">
                   <p className="text-sm" style={{ fontFamily: "Jost, sans-serif" }}>{i.product.name}</p>
@@ -898,7 +954,7 @@ function CartDrawer({ products, open, onClose, cart, updateQty, removeItem, setV
                     <X size={15} color={COLORS.mute} />
                   </button>
                 </div>
-                <p className="text-xs" style={{ color: COLORS.bronze, fontFamily: "Jost, sans-serif" }}>{formatPrice(i.product.price)}</p>
+                <p className="text-xs" style={{ color: COLORS.bronzeDark, fontFamily: "Jost, sans-serif" }}>{formatPrice(i.product.price)}</p>
                 <div className="flex items-center border w-fit" style={{ borderColor: COLORS.taupe }}>
                   <button onClick={() => updateQty(i.id, i.qty - 1, i.size, i.color)} className="px-2 py-1">
                     <Minus size={12} />
@@ -1116,7 +1172,7 @@ onChange={(e) =>
                   <input type="radio" name="delivery" checked={effectiveDeliveryType === "domicile"} disabled={!domicileAvailable} onChange={() => setDeliveryType("domicile")} />
                   التوصيل إلى المنزل
                 </span>
-                <span style={{ color: COLORS.bronze }}>{domicileAvailable ? formatPrice(selectedWilaya.domicile) : "غير متوفر"}</span>
+                <span style={{ color: COLORS.bronzeDark }}>{domicileAvailable ? formatPrice(selectedWilaya.domicile) : "غير متوفر"}</span>
               </label>
               <label
                 className="flex items-center justify-between gap-3 border p-4"
@@ -1126,7 +1182,7 @@ onChange={(e) =>
                   <input type="radio" name="delivery" checked={effectiveDeliveryType === "stopdesk"} disabled={!stopdeskAvailable} onChange={() => setDeliveryType("stopdesk")} />
                   الاستلام من مكتب التوصيل
                 </span>
-                <span style={{ color: COLORS.bronze }}>{stopdeskAvailable ? formatPrice(selectedWilaya.stopdesk) : "غير متوفر"}</span>
+                <span style={{ color: COLORS.bronzeDark }}>{stopdeskAvailable ? formatPrice(selectedWilaya.stopdesk) : "غير متوفر"}</span>
               </label>
             </div>
           </div>
@@ -1152,12 +1208,12 @@ onChange={(e) =>
         <div className="space-y-4">
           {items.map((i) => (
             <div key={`${i.id}-${i.size ?? "nosize"}-${i.color ?? "nocolor"}`} className="flex gap-3 text-sm" style={{ fontFamily: "Jost, sans-serif" }}>
-              <img src={i.product.img} className="w-14 h-16 object-cover" alt="" />
+              <img src={i.product.img} className="w-14 h-16 object-cover" alt="" loading="lazy" decoding="async" />
               <div className="flex-1">
                 <p>{i.product.name}</p>
                 <p style={{ color: COLORS.mute }}>x{i.qty}</p>
               </div>
-              <p style={{ color: COLORS.bronze }}>{formatPrice(i.product.price * i.qty)}</p>
+              <p style={{ color: COLORS.bronzeDark }}>{formatPrice(i.product.price * i.qty)}</p>
             </div>
           ))}
         </div>
@@ -1202,6 +1258,8 @@ function AboutView() {
     key={i}
     src={image}
     alt=""
+    loading={i === 0 ? "eager" : "lazy"}
+    decoding="async"
     className="w-full aspect-square object-cover"
   />
 ))} 
@@ -1356,11 +1414,11 @@ function AdminView({ products, addProduct, deleteProduct, orders, ordersLoading,
 
     const imageUrls = [];
     for (const file of files) {
-      const ext = file.name.split(".").pop();
-         const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const compressed = await compressImage(file).catch(() => file); // لو فشل الضغط لأي سبب، نرفع الملف الأصلي كحل احتياطي
+      const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
       const { error: uploadError } = await supabase.storage
         .from("product-images")
-        .upload(fileName, file, { cacheControl: "3600", upsert: false });
+        .upload(fileName, compressed, { cacheControl: "31536000", upsert: false, contentType: "image/jpeg" });
       if (uploadError) {
         // نعرض رسالة الخطأ الحقيقية الجاية من Supabase (غالبًا سببها RLS policy ناقصة على storage.objects)
         setFormError("تعذر رفع الصورة: " + (uploadError.message || "خطأ غير معروف"));
@@ -1410,7 +1468,7 @@ setImgPreview(imageUrls[0]);
   if (!unlocked) {
     return (
       <section className="max-w-sm mx-auto px-5 py-24 text-center">
-        <Lock size={22} color={COLORS.bronze} className="mx-auto mb-4" />
+        <Lock size={22} color={COLORS.bronzeDark} className="mx-auto mb-4" />
         <h1 className="text-xl mb-2" style={{ fontFamily: "Fraunces, serif" }}>لوحة تحكم المتجر</h1>
         <p className="text-xs mb-6" style={{ color: COLORS.mute, fontFamily: "Jost, sans-serif" }}>
           الدخول محصور على الحساب المسجّل في Supabase Auth
@@ -1497,14 +1555,14 @@ setImgPreview(imageUrls[0]);
         <button
           onClick={() => setTab("products")}
           className="flex items-center gap-2 text-sm px-4 py-3 border-b-2"
-          style={{ fontFamily: "Jost, sans-serif", borderColor: tab === "products" ? COLORS.bronze : "transparent", color: tab === "products" ? COLORS.ink : COLORS.mute }}
+          style={{ fontFamily: "Jost, sans-serif", borderColor: tab === "products" ? COLORS.bronzeDark : "transparent", color: tab === "products" ? COLORS.ink : COLORS.mute }}
         >
           <Package size={15} /> المنتجات
         </button>
         <button
           onClick={() => setTab("orders")}
           className="flex items-center gap-2 text-sm px-4 py-3 border-b-2"
-          style={{ fontFamily: "Jost, sans-serif", borderColor: tab === "orders" ? COLORS.bronze : "transparent", color: tab === "orders" ? COLORS.ink : COLORS.mute }}
+          style={{ fontFamily: "Jost, sans-serif", borderColor: tab === "orders" ? COLORS.bronzeDark : "transparent", color: tab === "orders" ? COLORS.ink : COLORS.mute }}
         >
           <Settings size={15} /> الطلبيات
         </button>
@@ -1665,7 +1723,7 @@ setImgPreview(imageUrls[0]);
                   <img src={p.img} alt="" className="w-12 h-14 object-cover shrink-0" />
                   <div className="flex-1 text-sm" style={{ fontFamily: "Jost, sans-serif" }}>
                     <p>{p.name}</p>
-                    <p style={{ color: COLORS.bronze }}>{formatPrice(p.price)}</p>
+                    <p style={{ color: COLORS.bronzeDark }}>{formatPrice(p.price)}</p>
                   </div>
                   <button
                     onClick={async () => {
@@ -1744,7 +1802,7 @@ setImgPreview(imageUrls[0]);
                         </span>
                       </div>
                       <div className="flex items-center gap-3">
-                        <span style={{ color: COLORS.bronze }}>{formatPrice(o.total)}</span>
+                        <span style={{ color: COLORS.bronzeDark }}>{formatPrice(o.total)}</span>
                         <button
                           onClick={async () => {
                             if (!o.customer?.phone) return;
